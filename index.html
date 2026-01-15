@@ -177,6 +177,21 @@
         @media (max-width: 768px) { .header { flex-direction: column; gap: 10px; } .widget-grid { grid-template-columns: repeat(2, 1fr); } .section-title-input { width: 100%; } }
         .hidden-input { display: none; }
         .leaflet-container { background: white !important; }
+        
+        /* View Mode - Hide Builder Elements */
+        .view-mode .panel { display: none !important; }
+        .view-mode .filter-panel { display: block !important; }
+        .view-mode .filter-panel .panel-title .step { display: none; }
+        .view-mode .filter-config { display: none !important; }
+        .view-mode .add-section-btn { display: none !important; }
+        .view-mode .section-actions { display: none !important; }
+        .view-mode .card-btn { display: none !important; }
+        .view-mode .card-btn.download { display: flex !important; }
+        .view-mode .header-actions { display: none !important; }
+        .view-mode .section-title-input { background: transparent; border: none; pointer-events: none; }
+        .view-mode .card-title-input { background: transparent; border: none; pointer-events: none; }
+        .view-mode .drag-handle { display: none; }
+        .view-mode .main-container { padding-top: 10px; }
     </style>
 </head>
 <body>
@@ -264,12 +279,12 @@
         <div class="modal" style="max-width:600px;">
             <div class="modal-header"><h3>Share Dashboard</h3><button class="modal-close" onclick="closeShareModal()">&times;</button></div>
             <div class="modal-body">
-                <p style="margin-bottom:15px;color:#666;">Copy this URL to share your dashboard configuration. Anyone with this link can load the same dashboard layout.</p>
+                <p style="margin-bottom:15px;color:#666;">Copy this URL to share your dashboard. Recipients will see a read-only view with your charts and data.</p>
+                <p style="margin-bottom:15px;color:#004080;font-weight:600;font-size:12px;">Note: Data must be loaded via URL (not file upload) to share. The shared link will automatically load your data.</p>
                 <div class="share-url-container">
                     <textarea class="share-url-input" id="shareUrlInput" rows="4" readonly></textarea>
                     <button class="copy-btn" onclick="copyShareUrl()">Copy URL</button>
                 </div>
-                <p style="margin-top:15px;font-size:11px;color:#999;">Note: The URL contains the dashboard configuration. Data must be loaded separately.</p>
             </div>
         </div>
     </div>
@@ -347,19 +362,43 @@
         let selectedChartType = null, sectionCounter = 0, cardCounter = 0, isEditMode = false, activeFilters = {};
         
         // Check for config in URL on load
-        window.onload = function() {
+        let isViewMode = false;
+        let loadedDataUrl = '';
+        
+        window.onload = async function() {
             const urlParams = new URLSearchParams(window.location.search);
             const configParam = urlParams.get('config');
+            const dataUrlParam = urlParams.get('data');
+            const viewParam = urlParams.get('view');
+            
+            if (viewParam === '1' && configParam) {
+                isViewMode = true;
+                enableViewMode();
+            }
+            
             if (configParam) {
                 try {
                     const config = JSON.parse(atob(configParam));
-                    showToast('Dashboard config loaded from URL. Please load your data.');
                     window.pendingConfig = config;
+                    
+                    // If data URL provided, load it automatically
+                    if (dataUrlParam) {
+                        loadedDataUrl = decodeURIComponent(dataUrlParam);
+                        document.getElementById('dataUrl').value = loadedDataUrl;
+                        await loadFromUrl();
+                    } else if (!isViewMode) {
+                        showToast('Dashboard config loaded. Please load your data.');
+                    }
                 } catch (e) {
                     console.error('Failed to parse config from URL');
                 }
             }
         };
+        
+        function enableViewMode() {
+            document.body.classList.add('view-mode');
+            document.querySelector('.header h1').textContent = 'ICF Dashboard';
+        }
         
         function switchTab(tab) { document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); event.target.classList.add('active'); document.getElementById('tab-' + tab).classList.add('active'); }
         
@@ -376,7 +415,7 @@
             else if (['xlsx', 'xls'].includes(ext)) { const reader = new FileReader(); reader.onload = e => { try { handleParsedData(XLSX.utils.sheet_to_json(XLSX.read(e.target.result, { type: 'array' }).Sheets[XLSX.read(e.target.result, { type: 'array' }).SheetNames[0]], { defval: '' }), file.name); } catch (err) { showToast('Error: ' + err.message, 'error'); } }; reader.readAsArrayBuffer(file); }
         }
         
-        async function loadFromUrl() { const url = document.getElementById('dataUrl').value.trim(); if (!url) { showToast('Enter URL', 'error'); return; } try { showToast('Loading...'); const res = await fetch(url); let data = (res.headers.get('content-type') || '').includes('json') || url.endsWith('.json') ? await res.json() : Papa.parse(await res.text(), { header: true, dynamicTyping: true, skipEmptyLines: true }).data; if (!Array.isArray(data)) data = data.data || data.results || data.items || [data]; handleParsedData(data, url.split('/').pop() || 'URL Data'); } catch (e) { showToast('Error: ' + e.message, 'error'); } }
+        async function loadFromUrl() { const url = document.getElementById('dataUrl').value.trim(); if (!url) { showToast('Enter URL', 'error'); return; } try { showToast('Loading...'); const res = await fetch(url); let data = (res.headers.get('content-type') || '').includes('json') || url.endsWith('.json') ? await res.json() : Papa.parse(await res.text(), { header: true, dynamicTyping: true, skipEmptyLines: true }).data; if (!Array.isArray(data)) data = data.data || data.results || data.items || [data]; loadedDataUrl = url; handleParsedData(data, url.split('/').pop() || 'URL Data'); } catch (e) { showToast('Error: ' + e.message, 'error'); } }
         
         function handleParsedData(data, fileName) {
             if (!data?.length) { showToast('No data', 'error'); return; }
@@ -397,13 +436,25 @@
         
         function applyConfigFromUrl(config) {
             if (!config.sections) return;
+            
+            // Set up filter columns if provided
+            if (config.filterColumns && config.filterColumns.length) {
+                const filterSelect = document.getElementById('filterVarSelect');
+                config.filterColumns.forEach(col => {
+                    const option = filterSelect.querySelector(`option[value="${col}"]`);
+                    if (option) option.selected = true;
+                });
+                updateFilters();
+            }
+            
             config.sections.forEach(s => {
                 sectionCounter++;
                 const section = { id: 'section_' + sectionCounter, title: s.title, rows: s.rows, cols: s.cols, cards: [] };
                 sections.push(section);
                 renderSectionFromConfig(section, s.cards);
             });
-            showToast('Dashboard layout applied');
+            
+            if (!isViewMode) showToast('Dashboard layout applied');
         }
         
         function renderSectionFromConfig(section, cardConfigs) {
@@ -419,6 +470,10 @@
                 const card = section.cards.find(c => c.id === cardId);
                 if (card && cfg.chartType) {
                     Object.assign(card, cfg);
+                    // Set card title in input
+                    const titleInput = document.querySelector(`#${cardId} .card-title-input`);
+                    if (titleInput && cfg.title) titleInput.value = cfg.title;
+                    // Render the widget
                     if (cfg.chartType !== 'map') renderWidget(card, section.id);
                 }
             });
@@ -526,6 +581,17 @@
         // Share as URL
         function shareAsUrl() {
             if (!sections.length) { showToast('No dashboard to share', 'error'); return; }
+            if (!uploadedData.length) { showToast('Load data first to share', 'error'); return; }
+            
+            // Check if data was loaded from URL
+            const dataUrl = loadedDataUrl || document.getElementById('dataUrl').value.trim();
+            if (!dataUrl) {
+                showToast('Data must be loaded from URL to share. Upload data via URL tab first.', 'error');
+                return;
+            }
+            
+            // Get selected filter columns
+            const filterCols = Array.from(document.getElementById('filterVarSelect').selectedOptions).map(o => o.value);
             
             const config = {
                 sections: sections.map(s => ({
@@ -537,11 +603,12 @@
                         geoJoinCol: c.geoJoinCol, palette: c.palette, legendTitle: c.legendTitle,
                         customIntervals: c.customIntervals
                     }))
-                }))
+                })),
+                filterColumns: filterCols
             };
             
             const encoded = btoa(JSON.stringify(config));
-            const url = window.location.origin + window.location.pathname + '?config=' + encoded;
+            const url = window.location.origin + window.location.pathname + '?view=1&config=' + encoded + '&data=' + encodeURIComponent(dataUrl);
             
             document.getElementById('shareUrlInput').value = url;
             document.getElementById('shareModal').classList.add('show');
