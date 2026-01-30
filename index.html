@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ICF Dashboard Canvas Builder</title>
-    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
+    <title>ICF Dashboard Canvas Builder v2.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -14,30 +14,58 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Oswald', Arial, sans-serif; background: #f0f2f5; min-height: 100vh; }
+        body { font-family: 'Source Sans 3', Arial, sans-serif; background: #f0f2f5; min-height: 100vh; }
         
-        .header { background: linear-gradient(135deg, #004080 0%, #002855 100%); color: white; padding: 12px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 3px 15px rgba(0,0,0,0.3); }
+        .header { background: linear-gradient(135deg, #004080 0%, #002855 100%); color: white; padding: 12px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 3px 15px rgba(0,0,0,0.3); position: sticky; top: 0; z-index: 100; }
         .header-brand { display: flex; align-items: center; gap: 12px; }
         .header-logo { width: 45px; height: 45px; border-radius: 8px; border: 2px solid white; }
-        .header h1 { font-size: 20px; font-weight: 700; }
+        .header h1 { font-family: 'Oswald', sans-serif; font-size: 20px; font-weight: 700; }
         .header-actions { display: flex; gap: 8px; }
-        .header-btn { background: white; color: #004080; border: none; padding: 8px 16px; border-radius: 6px; font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 12px; cursor: pointer; }
+        .header-btn { background: white; color: #004080; border: none; padding: 8px 16px; border-radius: 6px; font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 12px; cursor: pointer; transition: all 0.2s; }
         .header-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
         .header-btn.danger { background: #dc3545; color: white; }
         .header-btn.success { background: #28a745; color: white; }
         
-        .main-container { padding: 20px; max-width: 1800px; margin: 0 auto; }
+        .app-container { display: flex; min-height: calc(100vh - 69px); }
+        
+        /* Left Sidebar for Section Tabs */
+        .section-sidebar { width: 220px; background: #1a1a2e; color: white; padding: 0; display: none; flex-direction: column; overflow-y: auto; }
+        .section-sidebar.show { display: flex; }
+        .sidebar-header { padding: 15px; background: rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-header h3 { font-family: 'Oswald', sans-serif; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.7); }
+        .section-tabs-vertical { flex: 1; padding: 10px 0; }
+        .section-tab-v { display: flex; align-items: center; gap: 10px; padding: 12px 15px; cursor: pointer; border-left: 3px solid transparent; transition: all 0.2s; color: rgba(255,255,255,0.7); }
+        .section-tab-v:hover { background: rgba(255,255,255,0.05); color: white; }
+        .section-tab-v.active { background: rgba(0,64,128,0.4); border-left-color: #00a8ff; color: white; }
+        .section-tab-v svg { opacity: 0.7; }
+        .section-tab-v span { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .section-tab-v .tab-actions { margin-left: auto; display: flex; gap: 4px; opacity: 0; transition: opacity 0.2s; }
+        .section-tab-v:hover .tab-actions { opacity: 1; }
+        .tab-action-btn { background: rgba(255,255,255,0.1); border: none; color: white; width: 22px; height: 22px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .tab-action-btn:hover { background: rgba(255,255,255,0.2); }
+        .tab-action-btn.delete:hover { background: #dc3545; }
+        
+        /* Top Tabs for Sections */
+        .section-tabs-horizontal { display: none; background: #1a1a2e; padding: 0 20px; overflow-x: auto; white-space: nowrap; }
+        .section-tabs-horizontal.show { display: flex; }
+        .section-tab-h { display: inline-flex; align-items: center; gap: 8px; padding: 14px 20px; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s; color: rgba(255,255,255,0.7); font-weight: 600; font-size: 13px; }
+        .section-tab-h:hover { background: rgba(255,255,255,0.05); color: white; }
+        .section-tab-h.active { background: rgba(0,64,128,0.3); border-bottom-color: #00a8ff; color: white; }
+        .section-tab-h .tab-actions { display: flex; gap: 4px; margin-left: 8px; opacity: 0; transition: opacity 0.2s; }
+        .section-tab-h:hover .tab-actions { opacity: 1; }
+        
+        .main-container { flex: 1; padding: 20px; max-width: 1800px; overflow-y: auto; }
         .panel { background: white; border-radius: 10px; padding: 20px; margin-bottom: 15px; box-shadow: 0 3px 15px rgba(0,0,0,0.08); }
-        .panel-title { font-size: 14px; font-weight: 700; color: #004080; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+        .panel-title { font-family: 'Oswald', sans-serif; font-size: 14px; font-weight: 700; color: #004080; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
         .panel-title .step { background: #004080; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; }
         
         .tabs { display: flex; gap: 5px; margin-bottom: 15px; }
-        .tab { padding: 10px 20px; background: #f0f0f0; border: none; border-radius: 6px 6px 0 0; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 13px; cursor: pointer; color: #666; }
+        .tab { padding: 10px 20px; background: #f0f0f0; border: none; border-radius: 6px 6px 0 0; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 13px; cursor: pointer; color: #666; transition: all 0.2s; }
         .tab.active { background: #004080; color: white; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         
-        .upload-area { border: 2px dashed #ccc; border-radius: 8px; padding: 30px; text-align: center; cursor: pointer; background: #fafafa; }
+        .upload-area { border: 2px dashed #ccc; border-radius: 8px; padding: 30px; text-align: center; cursor: pointer; background: #fafafa; transition: all 0.2s; }
         .upload-area:hover { border-color: #004080; background: #e3f2fd; }
         .upload-area.drag-over { border-color: #28a745; background: #e8f5e9; }
         .upload-area svg { color: #999; margin-bottom: 10px; }
@@ -45,9 +73,10 @@
         .upload-area .formats { font-size: 11px; color: #999; margin-top: 5px; }
         
         .url-input-group { display: flex; gap: 10px; }
-        .url-input { flex: 1; padding: 12px 15px; border: 2px solid #ddd; border-radius: 6px; font-family: 'Oswald', sans-serif; font-size: 14px; }
+        .url-input { flex: 1; padding: 12px 15px; border: 2px solid #ddd; border-radius: 6px; font-family: 'Source Sans 3', sans-serif; font-size: 14px; }
         .url-input:focus { outline: none; border-color: #004080; }
-        .load-btn { background: #004080; color: white; border: none; padding: 12px 25px; border-radius: 6px; font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 13px; cursor: pointer; }
+        .load-btn { background: #004080; color: white; border: none; padding: 12px 25px; border-radius: 6px; font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+        .load-btn:hover { background: #002855; }
         
         .file-info { margin-top: 12px; padding: 12px; background: #e8f5e9; border-radius: 6px; font-size: 13px; display: none; }
         .file-info.show { display: block; }
@@ -59,40 +88,60 @@
         .data-preview th { background: #004080; color: white; padding: 8px 6px; text-align: left; position: sticky; top: 0; }
         .data-preview td { padding: 6px; border-bottom: 1px solid #eee; }
         
-        .filter-panel { background: #fff3cd; border-left: 4px solid #ffc107; }
+        /* Filter Panel with Checkboxes */
+        .filter-panel { background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%); border-left: 4px solid #ffc107; }
         .filter-config { display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 15px; }
-        .filter-select { padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-family: 'Oswald', sans-serif; font-size: 13px; min-width: 180px; }
-        .filter-controls { display: flex; gap: 15px; flex-wrap: wrap; padding: 15px; background: #f8f9fa; border-radius: 8px; }
-        .filter-group { display: flex; flex-direction: column; gap: 5px; }
-        .filter-group label { font-size: 11px; font-weight: 600; color: #666; text-transform: uppercase; }
-        .filter-group select { padding: 8px 12px; border: 2px solid #ddd; border-radius: 6px; font-family: 'Oswald', sans-serif; font-size: 13px; min-width: 150px; }
+        .filter-select { padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-family: 'Source Sans 3', sans-serif; font-size: 13px; min-width: 200px; background: white; }
+        .filter-controls { display: flex; gap: 20px; flex-wrap: wrap; padding: 15px; background: rgba(255,255,255,0.7); border-radius: 8px; }
+        .filter-group { display: flex; flex-direction: column; gap: 8px; min-width: 180px; max-width: 250px; }
+        .filter-group-header { display: flex; justify-content: space-between; align-items: center; }
+        .filter-group label.filter-title { font-size: 12px; font-weight: 700; color: #333; text-transform: uppercase; letter-spacing: 0.5px; }
+        .filter-group .select-all-btn { font-size: 10px; color: #004080; cursor: pointer; text-decoration: underline; }
+        .checkbox-container { max-height: 180px; overflow-y: auto; background: white; border: 1px solid #ddd; border-radius: 6px; padding: 8px; }
+        .checkbox-item { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 4px; cursor: pointer; transition: background 0.15s; }
+        .checkbox-item:hover { background: #e3f2fd; }
+        .checkbox-item input[type="checkbox"] { width: 16px; height: 16px; accent-color: #004080; cursor: pointer; }
+        .checkbox-item span { font-size: 13px; color: #333; }
+        .filter-count { font-size: 11px; color: #666; margin-top: 4px; }
+        
+        /* Layout Config */
+        .layout-config { display: flex; gap: 15px; align-items: center; padding: 15px; background: #f0f4f8; border-radius: 8px; margin-bottom: 15px; }
+        .layout-config label { font-size: 12px; font-weight: 600; color: #333; }
+        .layout-toggle { display: flex; gap: 5px; }
+        .layout-option { padding: 8px 15px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; background: white; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+        .layout-option:hover { border-color: #004080; }
+        .layout-option.active { background: #004080; color: white; border-color: #004080; }
         
         .config-row { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end; }
         .config-group { display: flex; flex-direction: column; gap: 5px; }
         .config-label { font-size: 11px; font-weight: 600; color: #666; text-transform: uppercase; }
-        .config-input { padding: 10px 14px; border: 2px solid #ddd; border-radius: 6px; font-family: 'Oswald', sans-serif; font-size: 14px; width: 100px; text-align: center; }
+        .config-input { padding: 10px 14px; border: 2px solid #ddd; border-radius: 6px; font-family: 'Source Sans 3', sans-serif; font-size: 14px; width: 100px; text-align: center; }
         .config-input:focus { outline: none; border-color: #004080; }
         
-        .sections-container { margin-top: 20px; }
+        /* Sections */
+        .sections-container { }
+        .section-content { display: none; }
+        .section-content.active { display: block; }
+        
         .dashboard-section { background: white; border-radius: 12px; margin-bottom: 20px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
         .section-header { background: linear-gradient(135deg, #004080 0%, #002855 100%); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
         .section-title-input { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; font-family: 'Oswald', sans-serif; font-size: 18px; font-weight: 700; padding: 10px 15px; border-radius: 6px; width: 450px; outline: none; }
         .section-title-input::placeholder { color: rgba(255,255,255,0.5); }
         .section-actions { display: flex; gap: 8px; }
-        .section-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 6px; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+        .section-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 6px; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.2s; }
         .section-btn:hover { background: rgba(255,255,255,0.3); }
         .section-btn.delete:hover { background: #dc3545; }
         .section-body { padding: 20px; background: #f8f9fa; }
         .section-grid { display: grid; gap: 15px; }
         
-        .canvas-card { background: white; border: 2px solid #e0e0e0; border-radius: 10px; overflow: hidden; min-height: 320px; display: flex; flex-direction: column; }
+        .canvas-card { background: white; border: 2px solid #e0e0e0; border-radius: 10px; overflow: hidden; min-height: 320px; display: flex; flex-direction: column; transition: all 0.2s; }
         .canvas-card:hover { border-color: #004080; box-shadow: 0 6px 20px rgba(0,64,128,0.12); }
         .card-header { background: linear-gradient(135deg, #004080 0%, #002855 100%); color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
         .card-title-area { display: flex; align-items: center; gap: 10px; flex: 1; }
         .drag-handle { cursor: grab; opacity: 0.7; }
         .card-title-input { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; font-family: 'Oswald', sans-serif; font-size: 14px; font-weight: 600; padding: 8px 12px; border-radius: 6px; flex: 1; max-width: 350px; outline: none; }
         .card-actions { display: flex; gap: 4px; }
-        .card-btn { background: rgba(255,255,255,0.2); border: none; color: white; width: 30px; height: 30px; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .card-btn { background: rgba(255,255,255,0.2); border: none; color: white; width: 30px; height: 30px; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
         .card-btn:hover { background: rgba(255,255,255,0.35); }
         .card-btn.delete:hover { background: #dc3545; }
         .card-btn.edit:hover { background: #ffc107; }
@@ -101,30 +150,33 @@
         .card-placeholder { text-align: center; color: #bbb; }
         .card-placeholder p { font-size: 12px; margin-top: 8px; }
         
-        .add-section-btn { background: white; border: 3px dashed #004080; border-radius: 12px; padding: 30px; text-align: center; cursor: pointer; color: #004080; }
+        .add-section-btn { background: white; border: 3px dashed #004080; border-radius: 12px; padding: 30px; text-align: center; cursor: pointer; color: #004080; transition: all 0.2s; }
         .add-section-btn:hover { background: #e3f2fd; border-style: solid; }
-        .add-section-btn span { font-size: 16px; font-weight: 700; display: block; margin-top: 10px; }
+        .add-section-btn span { font-family: 'Oswald', sans-serif; font-size: 16px; font-weight: 700; display: block; margin-top: 10px; }
         
+        /* Modal Styles */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 9999; padding: 20px; }
         .modal-overlay.show { display: flex; }
-        .modal { background: white; border-radius: 12px; width: 100%; max-width: 700px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
-        .modal-header { background: linear-gradient(135deg, #004080 0%, #002855 100%); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
-        .modal-header h3 { font-size: 16px; font-weight: 700; }
-        .modal-close { background: rgba(255,255,255,0.2); border: none; color: white; font-size: 22px; cursor: pointer; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+        .modal { background: white; border-radius: 12px; width: 100%; max-width: 750px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
+        .modal-header { background: linear-gradient(135deg, #004080 0%, #002855 100%); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+        .modal-header h3 { font-family: 'Oswald', sans-serif; font-size: 16px; font-weight: 700; }
+        .modal-close { background: rgba(255,255,255,0.2); border: none; color: white; font-size: 22px; cursor: pointer; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .modal-close:hover { background: rgba(255,255,255,0.3); }
         .modal-body { padding: 20px; }
         .modal-section { margin-bottom: 20px; }
-        .modal-section-title { font-size: 12px; font-weight: 700; color: #004080; margin-bottom: 10px; text-transform: uppercase; }
+        .modal-section-title { font-family: 'Oswald', sans-serif; font-size: 12px; font-weight: 700; color: #004080; margin-bottom: 10px; text-transform: uppercase; }
         
-        .widget-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        .widget-option { background: #f8f9fa; border: 2px solid #e0e0e0; border-radius: 8px; padding: 15px 8px; text-align: center; cursor: pointer; }
-        .widget-option:hover { border-color: #004080; background: #e3f2fd; }
+        /* Widget Grid - More Options */
+        .widget-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+        .widget-option { background: #f8f9fa; border: 2px solid #e0e0e0; border-radius: 8px; padding: 12px 8px; text-align: center; cursor: pointer; transition: all 0.2s; }
+        .widget-option:hover { border-color: #004080; background: #e3f2fd; transform: translateY(-2px); }
         .widget-option.selected { border-color: #28a745; background: #e8f5e9; }
         .widget-option svg { color: #004080; margin-bottom: 6px; }
-        .widget-option span { font-size: 10px; font-weight: 700; color: #333; display: block; text-transform: uppercase; }
+        .widget-option span { font-size: 9px; font-weight: 700; color: #333; display: block; text-transform: uppercase; }
         
-        .column-select { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-family: 'Oswald', sans-serif; font-size: 13px; margin-bottom: 10px; }
+        .column-select { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-family: 'Source Sans 3', sans-serif; font-size: 13px; margin-bottom: 10px; }
         .column-select:focus { outline: none; border-color: #004080; }
-        .apply-btn { background: #28a745; color: white; border: none; padding: 12px 25px; border-radius: 6px; font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 13px; cursor: pointer; width: 100%; text-transform: uppercase; }
+        .apply-btn { background: #28a745; color: white; border: none; padding: 12px 25px; border-radius: 6px; font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 13px; cursor: pointer; width: 100%; text-transform: uppercase; transition: all 0.2s; }
         .apply-btn:hover { background: #218838; }
         .apply-btn:disabled { background: #ccc; cursor: not-allowed; }
         
@@ -135,18 +187,18 @@
         .join-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
         .join-row span { font-size: 12px; font-weight: 600; color: #666; min-width: 110px; }
         
-        .intervals-input { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-family: 'Oswald', sans-serif; font-size: 13px; margin-bottom: 5px; }
+        .intervals-input { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-family: 'Source Sans 3', sans-serif; font-size: 13px; margin-bottom: 5px; }
         .intervals-help { font-size: 11px; color: #666; margin-bottom: 10px; }
         
         .palette-grid { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
-        .palette-option { display: flex; height: 30px; border-radius: 6px; overflow: hidden; cursor: pointer; border: 3px solid transparent; }
+        .palette-option { display: flex; height: 30px; border-radius: 6px; overflow: hidden; cursor: pointer; border: 3px solid transparent; transition: all 0.2s; }
         .palette-option:hover { transform: scale(1.05); }
         .palette-option.selected { border-color: #333; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
         .palette-option div { width: 25px; height: 100%; }
         
-        .chart-wrapper { width: 100%; height: 190px; position: relative; }
+        .chart-wrapper { width: 100%; height: 220px; position: relative; }
         .map-wrapper { width: 100%; position: relative; }
-        .map-container { width: 100%; height: 220px; border-radius: 6px; overflow: hidden; background: white; border: 1px solid #ddd; }
+        .map-container { width: 100%; height: 250px; border-radius: 6px; overflow: hidden; background: white; border: 1px solid #ddd; }
         
         .map-legend { position: absolute; top: 10px; right: 10px; background: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); font-size: 11px; max-width: 180px; max-height: 200px; overflow-y: auto; z-index: 1000; }
         .legend-title { font-weight: 700; margin-bottom: 10px; color: #333; font-size: 12px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
@@ -159,96 +211,152 @@
         .scale-bar { height: 4px; background: #333; margin-bottom: 3px; border-left: 2px solid #333; border-right: 2px solid #333; }
         
         .kpi-display { text-align: center; }
-        .kpi-value { font-size: 42px; font-weight: 700; color: #004080; }
+        .kpi-value { font-family: 'Oswald', sans-serif; font-size: 48px; font-weight: 700; color: #004080; }
         .kpi-label { font-size: 12px; color: #666; margin-top: 5px; text-transform: uppercase; }
+        
+        .table-wrapper { width: 100%; max-height: 250px; overflow: auto; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .data-table th { background: #004080; color: white; padding: 10px 8px; text-align: left; position: sticky; top: 0; }
+        .data-table td { padding: 8px; border-bottom: 1px solid #eee; }
+        .data-table tr:hover td { background: #f0f4f8; }
         
         .toast { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%) translateY(100px); background: #28a745; color: white; padding: 12px 25px; border-radius: 8px; font-weight: 600; box-shadow: 0 6px 20px rgba(0,0,0,0.2); transition: transform 0.3s; z-index: 10000; font-size: 13px; }
         .toast.show { transform: translateX(-50%) translateY(0); }
         .toast.error { background: #dc3545; }
         
-        /* Share URL Modal */
         .share-url-container { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px; }
-        .share-url-input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-family: monospace; font-size: 12px; margin-bottom: 10px; }
-        .copy-btn { background: #004080; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-family: 'Oswald', sans-serif; font-weight: 700; cursor: pointer; }
+        .share-url-input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-family: monospace; font-size: 12px; margin-bottom: 10px; resize: vertical; }
+        .copy-btn { background: #004080; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-family: 'Oswald', sans-serif; font-weight: 700; cursor: pointer; transition: all 0.2s; }
         .copy-btn:hover { background: #002855; }
         
         .footer { background: #004080; color: white; text-align: center; padding: 12px; font-size: 11px; margin-top: 25px; }
         
-        @media (max-width: 768px) { .header { flex-direction: column; gap: 10px; } .widget-grid { grid-template-columns: repeat(2, 1fr); } .section-title-input { width: 100%; } }
+        @media (max-width: 768px) { 
+            .header { flex-direction: column; gap: 10px; } 
+            .widget-grid { grid-template-columns: repeat(3, 1fr); } 
+            .section-title-input { width: 100%; }
+            .section-sidebar { width: 180px; }
+        }
         .hidden-input { display: none; }
         .leaflet-container { background: white !important; }
         
-        /* View Mode - Hide Builder Elements */
-        .view-mode .panel { display: none !important; }
+        /* View Mode */
+        .view-mode .panel:not(.filter-panel) { display: none !important; }
         .view-mode .filter-panel { display: block !important; }
         .view-mode .filter-panel .panel-title .step { display: none; }
         .view-mode .filter-config { display: none !important; }
         .view-mode .add-section-btn { display: none !important; }
         .view-mode .section-actions { display: none !important; }
-        .view-mode .card-btn { display: none !important; }
+        .view-mode .card-btn:not(.download) { display: none !important; }
         .view-mode .card-btn.download { display: flex !important; }
         .view-mode .header-actions { display: none !important; }
         .view-mode .section-title-input { background: transparent; border: none; pointer-events: none; }
         .view-mode .card-title-input { background: transparent; border: none; pointer-events: none; }
         .view-mode .drag-handle { display: none; }
-        .view-mode .main-container { padding-top: 10px; }
+        .view-mode .tab-actions { display: none !important; }
+        .view-mode .layout-config { display: none !important; }
+        
+        /* Empty state */
+        .empty-state { text-align: center; padding: 60px 20px; color: #999; }
+        .empty-state svg { margin-bottom: 15px; opacity: 0.5; }
+        .empty-state h3 { font-family: 'Oswald', sans-serif; color: #666; margin-bottom: 10px; }
+        .empty-state p { font-size: 14px; }
     </style>
 </head>
 <body>
     <header class="header">
         <div class="header-brand">
             <img src="https://github.com/mohamedsillahkanu/gdp-dashboard-2/raw/6c7463b0d5c3be150aafae695a4bcbbd8aeb1499/ICF-SL.jpg" alt="ICF-SL" class="header-logo">
-            <h1>Dashboard Canvas Builder</h1>
+            <h1>Dashboard Canvas Builder v2.0</h1>
         </div>
         <div class="header-actions">
             <button class="header-btn success" onclick="shareAsUrl()">Share as URL</button>
             <button class="header-btn" onclick="exportConfig()">Export Config</button>
+            <button class="header-btn" onclick="importConfig()">Import Config</button>
             <button class="header-btn danger" onclick="clearAll()">Clear All</button>
         </div>
     </header>
     
-    <div class="main-container">
-        <div class="panel">
-            <div class="panel-title"><span class="step">1</span> Load Your Data</div>
-            <div class="tabs">
-                <button class="tab active" onclick="switchTab('upload')">Upload File</button>
-                <button class="tab" onclick="switchTab('url')">Load from URL</button>
+    <input type="file" id="importInput" class="hidden-input" accept=".json" onchange="handleImport(event)">
+    
+    <div class="app-container">
+        <!-- Left Sidebar Tabs -->
+        <div class="section-sidebar" id="sectionSidebar">
+            <div class="sidebar-header">
+                <h3>Dashboard Sections</h3>
             </div>
-            <div class="tab-content active" id="tab-upload">
-                <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
-                    <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                    <p>Click or drag & drop your data file</p>
-                    <p class="formats">CSV, Excel (.xlsx, .xls)</p>
-                </div>
-                <input type="file" id="fileInput" class="hidden-input" accept=".csv,.xlsx,.xls" onchange="handleFileUpload(event)">
-            </div>
-            <div class="tab-content" id="tab-url">
-                <div class="url-input-group">
-                    <input type="text" class="url-input" id="dataUrl" placeholder="Enter data URL (JSON, CSV, or API endpoint)">
-                    <button class="load-btn" onclick="loadFromUrl()">Load Data</button>
-                </div>
-            </div>
-            <div class="file-info" id="fileInfo"><strong>Data loaded:</strong> <span id="fileName"></span> | <strong>Rows:</strong> <span id="rowCount"></span> | <strong>Columns:</strong> <span id="colCount"></span></div>
-            <div class="data-preview" id="dataPreview"><table id="previewTable"></table></div>
+            <div class="section-tabs-vertical" id="sectionTabsVertical"></div>
         </div>
         
-        <div class="panel filter-panel" id="filterPanel" style="display:none;">
-            <div class="panel-title"><span class="step">2</span> Configure Filters</div>
-            <div class="filter-config">
-                <div class="config-group">
-                    <label class="config-label">Select Filter Variables</label>
-                    <select class="filter-select" id="filterVarSelect" multiple size="4" onchange="updateFilters()"></select>
+        <div style="flex: 1; display: flex; flex-direction: column;">
+            <!-- Top Horizontal Tabs -->
+            <div class="section-tabs-horizontal" id="sectionTabsHorizontal"></div>
+            
+            <div class="main-container">
+                <div class="panel">
+                    <div class="panel-title"><span class="step">1</span> Load Your Data</div>
+                    <div class="tabs">
+                        <button class="tab active" onclick="switchTab('upload')">Upload File</button>
+                        <button class="tab" onclick="switchTab('url')">Load from URL</button>
+                    </div>
+                    <div class="tab-content active" id="tab-upload">
+                        <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                            <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            <p>Click or drag & drop your data file</p>
+                            <p class="formats">CSV, Excel (.xlsx, .xls)</p>
+                        </div>
+                        <input type="file" id="fileInput" class="hidden-input" accept=".csv,.xlsx,.xls" onchange="handleFileUpload(event)">
+                    </div>
+                    <div class="tab-content" id="tab-url">
+                        <div class="url-input-group">
+                            <input type="text" class="url-input" id="dataUrl" placeholder="Enter data URL (JSON, CSV, or API endpoint)">
+                            <button class="load-btn" onclick="loadFromUrl()">Load Data</button>
+                        </div>
+                    </div>
+                    <div class="file-info" id="fileInfo"><strong>Data loaded:</strong> <span id="fileName"></span> | <strong>Rows:</strong> <span id="rowCount"></span> | <strong>Columns:</strong> <span id="colCount"></span></div>
+                    <div class="data-preview" id="dataPreview"><table id="previewTable"></table></div>
                 </div>
-                <p style="font-size:11px;color:#666;align-self:center;">Hold Ctrl/Cmd to select multiple</p>
-            </div>
-            <div class="filter-controls" id="filterControls" style="display:none;"></div>
-        </div>
-        
-        <div class="sections-container" id="sectionsContainer">
-            <div class="add-section-btn" onclick="addSection()">
-                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span>Add Dashboard Section</span>
-                <p style="font-size:12px;margin-top:5px;font-weight:400;">Load data first, then add sections with custom grid layouts</p>
+                
+                <div class="panel filter-panel" id="filterPanel" style="display:none;">
+                    <div class="panel-title"><span class="step">2</span> Configure Filters</div>
+                    <div class="filter-config">
+                        <div class="config-group">
+                            <label class="config-label">Select Filter Variables (Categorical)</label>
+                            <select class="filter-select" id="filterVarSelect" multiple size="4" onchange="updateFilters()"></select>
+                        </div>
+                        <p style="font-size:11px;color:#666;align-self:center;">Hold Ctrl/Cmd to select multiple columns</p>
+                    </div>
+                    <div class="filter-controls" id="filterControls" style="display:none;"></div>
+                </div>
+                
+                <div class="panel" id="layoutPanel" style="display:none;">
+                    <div class="panel-title"><span class="step">3</span> Section Navigation Layout</div>
+                    <div class="layout-config">
+                        <label>Display sections as:</label>
+                        <div class="layout-toggle">
+                            <div class="layout-option active" data-layout="none" onclick="setLayout('none')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                                Stacked
+                            </div>
+                            <div class="layout-option" data-layout="left" onclick="setLayout('left')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+                                Left Tabs
+                            </div>
+                            <div class="layout-option" data-layout="top" onclick="setLayout('top')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+                                Top Tabs
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="sections-container" id="sectionsContainer">
+                    <div class="add-section-btn" onclick="addSection()">
+                        <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                        <span>Add Dashboard Section</span>
+                        <p style="font-size:12px;margin-top:5px;font-weight:400;">Load data first, then add sections with custom grid layouts</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -276,14 +384,19 @@
     
     <!-- Share URL Modal -->
     <div class="modal-overlay" id="shareModal">
-        <div class="modal" style="max-width:600px;">
+        <div class="modal" style="max-width:650px;">
             <div class="modal-header"><h3>Share Dashboard</h3><button class="modal-close" onclick="closeShareModal()">&times;</button></div>
             <div class="modal-body">
                 <p style="margin-bottom:15px;color:#666;">Copy this URL to share your dashboard. Recipients will see a read-only view with your charts and data.</p>
-                <p style="margin-bottom:15px;color:#004080;font-weight:600;font-size:12px;">Note: Data must be loaded via URL (not file upload) to share. The shared link will automatically load your data.</p>
+                <div id="shareWarning" style="display:none; margin-bottom:15px; padding:12px; background:#fff3cd; border-left:4px solid #ffc107; border-radius:4px;">
+                    <strong style="color:#856404;">Note:</strong> <span style="color:#856404;">Your data was uploaded from a file. To share, the data URL below will embed a sample. For full data sharing, host your data file online and load via URL.</span>
+                </div>
                 <div class="share-url-container">
-                    <textarea class="share-url-input" id="shareUrlInput" rows="4" readonly></textarea>
-                    <button class="copy-btn" onclick="copyShareUrl()">Copy URL</button>
+                    <textarea class="share-url-input" id="shareUrlInput" rows="5" readonly></textarea>
+                    <div style="display:flex; gap:10px;">
+                        <button class="copy-btn" onclick="copyShareUrl()">Copy URL</button>
+                        <button class="copy-btn" style="background:#28a745;" onclick="downloadShareHtml()">Download HTML</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -297,14 +410,21 @@
                 <div class="modal-section">
                     <div class="modal-section-title">Select Chart Type</div>
                     <div class="widget-grid">
-                        <div class="widget-option" data-type="bar" onclick="selectChartType('bar')"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg><span>Bar</span></div>
-                        <div class="widget-option" data-type="line" onclick="selectChartType('line')"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg><span>Line</span></div>
-                        <div class="widget-option" data-type="pie" onclick="selectChartType('pie')"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg><span>Pie</span></div>
-                        <div class="widget-option" data-type="doughnut" onclick="selectChartType('doughnut')"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg><span>Doughnut</span></div>
-                        <div class="widget-option" data-type="kpi" onclick="selectChartType('kpi')"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg><span>KPI</span></div>
-                        <div class="widget-option" data-type="area" onclick="selectChartType('area')"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Area</span></div>
-                        <div class="widget-option" data-type="histogram" onclick="selectChartType('histogram')"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="12" width="4" height="9"/><rect x="10" y="6" width="4" height="15"/><rect x="17" y="9" width="4" height="12"/></svg><span>Histogram</span></div>
-                        <div class="widget-option" data-type="map" onclick="selectChartType('map')"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg><span>Map</span></div>
+                        <div class="widget-option" data-type="bar" onclick="selectChartType('bar')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg><span>Bar</span></div>
+                        <div class="widget-option" data-type="horizontalBar" onclick="selectChartType('horizontalBar')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 8h8"/><path d="M7 12h12"/><path d="M7 16h5"/></svg><span>H-Bar</span></div>
+                        <div class="widget-option" data-type="stackedBar" onclick="selectChartType('stackedBar')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><rect x="7" y="14" width="3" height="3"/><rect x="7" y="10" width="3" height="4" fill="#ccc"/><rect x="12" y="8" width="3" height="9"/><rect x="12" y="5" width="3" height="3" fill="#ccc"/><rect x="17" y="11" width="3" height="6"/><rect x="17" y="8" width="3" height="3" fill="#ccc"/></svg><span>Stacked</span></div>
+                        <div class="widget-option" data-type="line" onclick="selectChartType('line')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg><span>Line</span></div>
+                        <div class="widget-option" data-type="area" onclick="selectChartType('area')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18 L8 12 L13 15 L21 6 L21 18 Z" fill="#e3f2fd"/><polyline points="3 18 8 12 13 15 21 6"/></svg><span>Area</span></div>
+                        <div class="widget-option" data-type="pie" onclick="selectChartType('pie')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg><span>Pie</span></div>
+                        <div class="widget-option" data-type="doughnut" onclick="selectChartType('doughnut')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg><span>Doughnut</span></div>
+                        <div class="widget-option" data-type="polarArea" onclick="selectChartType('polarArea')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg><span>Polar</span></div>
+                        <div class="widget-option" data-type="radar" onclick="selectChartType('radar')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/><polygon points="12 6 18 9.5 18 14.5 12 18 6 14.5 6 9.5 12 6"/></svg><span>Radar</span></div>
+                        <div class="widget-option" data-type="scatter" onclick="selectChartType('scatter')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><circle cx="8" cy="14" r="2" fill="currentColor"/><circle cx="12" cy="10" r="2" fill="currentColor"/><circle cx="16" cy="6" r="2" fill="currentColor"/><circle cx="18" cy="12" r="2" fill="currentColor"/></svg><span>Scatter</span></div>
+                        <div class="widget-option" data-type="bubble" onclick="selectChartType('bubble')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><circle cx="8" cy="14" r="3" fill="#e3f2fd" stroke="currentColor"/><circle cx="14" cy="8" r="4" fill="#e3f2fd" stroke="currentColor"/><circle cx="17" cy="14" r="2" fill="#e3f2fd" stroke="currentColor"/></svg><span>Bubble</span></div>
+                        <div class="widget-option" data-type="histogram" onclick="selectChartType('histogram')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="12" width="4" height="9"/><rect x="10" y="6" width="4" height="15"/><rect x="17" y="9" width="4" height="12"/></svg><span>Histogram</span></div>
+                        <div class="widget-option" data-type="kpi" onclick="selectChartType('kpi')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg><span>KPI</span></div>
+                        <div class="widget-option" data-type="table" onclick="selectChartType('table')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg><span>Table</span></div>
+                        <div class="widget-option" data-type="map" onclick="selectChartType('map')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg><span>Map</span></div>
                     </div>
                 </div>
                 <div class="modal-section" id="columnSection"><div class="modal-section-title">Configure Data</div><div id="columnSelectors"><p style="color:#999;font-size:12px;">Select a chart type first</p></div></div>
@@ -339,7 +459,7 @@
     </div>
     
     <div class="toast" id="toast"></div>
-    <footer class="footer">&copy; 2025 Informatics Consultancy Firm - Sierra Leone (ICF-SL) | Dashboard Canvas Builder v1.0</footer>
+    <footer class="footer">&copy; 2025 Informatics Consultancy Firm - Sierra Leone (ICF-SL) | Dashboard Canvas Builder v2.0</footer>
 
     <script>
         const colorPalettes = {
@@ -353,15 +473,18 @@
             category10: ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'],
             paired: ['#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99', '#e31a1c', '#fdbf6f', '#ff7f00', '#cab2d6', '#6a3d9a'],
             set3: ['#8dd3c7', '#ffffb3', '#bebada', '#fb8072', '#80b1d3', '#fdb462', '#b3de69', '#fccde5', '#d9d9d9', '#bc80bd'],
-            icf: ['#004080', '#28a745', '#dc3545', '#ffc107', '#17a2b8', '#6f42c1', '#fd7e14', '#20c997', '#e83e8c', '#6c757d']
+            icf: ['#004080', '#28a745', '#dc3545', '#ffc107', '#17a2b8', '#6f42c1', '#fd7e14', '#20c997', '#e83e8c', '#6c757d'],
+            viridis: ['#440154', '#482878', '#3e4989', '#31688e', '#26828e', '#1f9e89', '#35b779', '#6ece58', '#b5de2b', '#fde725'],
+            plasma: ['#0d0887', '#46039f', '#7201a8', '#9c179e', '#bd3786', '#d8576b', '#ed7953', '#fb9f3a', '#fdca26', '#f0f921']
         };
         
         let selectedPalette = 'blues', selectedChartPalette = 'icf';
         let uploadedData = [], filteredData = [], columns = [], geoData = null, geoProperties = [];
         let sections = [], charts = {}, maps = {}, currentCardId = null, currentSectionId = null;
         let selectedChartType = null, sectionCounter = 0, cardCounter = 0, isEditMode = false, activeFilters = {};
+        let layoutMode = 'none'; // 'none', 'left', 'top'
+        let activeSectionId = null;
         
-        // Check for config in URL on load
         let isViewMode = false;
         let loadedDataUrl = '';
         
@@ -378,19 +501,22 @@
             
             if (configParam) {
                 try {
-                    const config = JSON.parse(atob(configParam));
+                    const config = JSON.parse(decodeURIComponent(atob(configParam)));
                     window.pendingConfig = config;
                     
-                    // If data URL provided, load it automatically
                     if (dataUrlParam) {
                         loadedDataUrl = decodeURIComponent(dataUrlParam);
                         document.getElementById('dataUrl').value = loadedDataUrl;
                         await loadFromUrl();
+                    } else if (config.embeddedData) {
+                        // Handle embedded data for file uploads
+                        handleParsedData(config.embeddedData, 'Shared Data');
                     } else if (!isViewMode) {
                         showToast('Dashboard config loaded. Please load your data.');
                     }
                 } catch (e) {
-                    console.error('Failed to parse config from URL');
+                    console.error('Failed to parse config from URL:', e);
+                    showToast('Error loading shared dashboard', 'error');
                 }
             }
         };
@@ -400,7 +526,107 @@
             document.querySelector('.header h1').textContent = 'ICF Dashboard';
         }
         
-        function switchTab(tab) { document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); event.target.classList.add('active'); document.getElementById('tab-' + tab).classList.add('active'); }
+        function switchTab(tab) { 
+            document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active')); 
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); 
+            event.target.classList.add('active'); 
+            document.getElementById('tab-' + tab).classList.add('active'); 
+        }
+        
+        // Layout switching
+        function setLayout(mode) {
+            layoutMode = mode;
+            document.querySelectorAll('.layout-option').forEach(o => o.classList.toggle('active', o.dataset.layout === mode));
+            
+            const sidebar = document.getElementById('sectionSidebar');
+            const topTabs = document.getElementById('sectionTabsHorizontal');
+            
+            sidebar.classList.toggle('show', mode === 'left');
+            topTabs.classList.toggle('show', mode === 'top');
+            
+            // Show/hide sections based on mode
+            updateSectionVisibility();
+            renderSectionTabs();
+        }
+        
+        function updateSectionVisibility() {
+            if (layoutMode === 'none') {
+                // Show all sections stacked
+                document.querySelectorAll('.section-content').forEach(s => s.classList.add('active'));
+            } else {
+                // Show only active section
+                document.querySelectorAll('.section-content').forEach(s => {
+                    s.classList.toggle('active', s.id === 'content_' + activeSectionId);
+                });
+            }
+        }
+        
+        function renderSectionTabs() {
+            const vTabs = document.getElementById('sectionTabsVertical');
+            const hTabs = document.getElementById('sectionTabsHorizontal');
+            
+            let vHtml = '', hHtml = '';
+            sections.forEach((s, i) => {
+                const isActive = s.id === activeSectionId;
+                const tabContent = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                    <span>${s.title || 'Section ' + (i + 1)}</span>
+                    <div class="tab-actions">
+                        <button class="tab-action-btn" onclick="event.stopPropagation(); editSectionTitle('${s.id}')" title="Edit">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                        <button class="tab-action-btn delete" onclick="event.stopPropagation(); deleteSection('${s.id}')" title="Delete">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>
+                    </div>
+                `;
+                vHtml += `<div class="section-tab-v ${isActive ? 'active' : ''}" onclick="switchSection('${s.id}')">${tabContent}</div>`;
+                hHtml += `<div class="section-tab-h ${isActive ? 'active' : ''}" onclick="switchSection('${s.id}')">${tabContent}</div>`;
+            });
+            
+            // Add "Add Section" tab
+            const addTabV = `<div class="section-tab-v" onclick="addSection()" style="color: #00a8ff; border-left-color: transparent;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>Add Section</span>
+            </div>`;
+            const addTabH = `<div class="section-tab-h" onclick="addSection()" style="color: #00a8ff; border-bottom-color: transparent;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>Add Section</span>
+            </div>`;
+            
+            vTabs.innerHTML = vHtml + addTabV;
+            hTabs.innerHTML = hHtml + addTabH;
+        }
+        
+        function switchSection(sectionId) {
+            activeSectionId = sectionId;
+            updateSectionVisibility();
+            renderSectionTabs();
+            
+            // Resize maps in the newly visible section
+            setTimeout(() => {
+                const section = sections.find(s => s.id === sectionId);
+                if (section) {
+                    section.cards.forEach(c => {
+                        if (maps[c.id]) {
+                            maps[c.id].invalidateSize();
+                        }
+                    });
+                }
+            }, 100);
+        }
+        
+        function editSectionTitle(sectionId) {
+            const s = sections.find(s => s.id === sectionId);
+            if (!s) return;
+            const newTitle = prompt('Enter section title:', s.title);
+            if (newTitle !== null) {
+                s.title = newTitle;
+                const input = document.querySelector(`#content_${sectionId} .section-title-input`);
+                if (input) input.value = newTitle;
+                renderSectionTabs();
+            }
+        }
         
         const uploadArea = document.getElementById('uploadArea');
         uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
@@ -410,12 +636,27 @@
         function handleFileUpload(e) { if (e.target.files[0]) processFile(e.target.files[0]); }
         
         function processFile(file) {
+            loadedDataUrl = ''; // Clear URL since we're using file upload
             const ext = file.name.split('.').pop().toLowerCase();
             if (ext === 'csv') Papa.parse(file, { header: true, dynamicTyping: true, skipEmptyLines: true, complete: r => handleParsedData(r.data, file.name), error: e => showToast('Error: ' + e.message, 'error') });
             else if (['xlsx', 'xls'].includes(ext)) { const reader = new FileReader(); reader.onload = e => { try { handleParsedData(XLSX.utils.sheet_to_json(XLSX.read(e.target.result, { type: 'array' }).Sheets[XLSX.read(e.target.result, { type: 'array' }).SheetNames[0]], { defval: '' }), file.name); } catch (err) { showToast('Error: ' + err.message, 'error'); } }; reader.readAsArrayBuffer(file); }
         }
         
-        async function loadFromUrl() { const url = document.getElementById('dataUrl').value.trim(); if (!url) { showToast('Enter URL', 'error'); return; } try { showToast('Loading...'); const res = await fetch(url); let data = (res.headers.get('content-type') || '').includes('json') || url.endsWith('.json') ? await res.json() : Papa.parse(await res.text(), { header: true, dynamicTyping: true, skipEmptyLines: true }).data; if (!Array.isArray(data)) data = data.data || data.results || data.items || [data]; loadedDataUrl = url; handleParsedData(data, url.split('/').pop() || 'URL Data'); } catch (e) { showToast('Error: ' + e.message, 'error'); } }
+        async function loadFromUrl() { 
+            const url = document.getElementById('dataUrl').value.trim(); 
+            if (!url) { showToast('Enter URL', 'error'); return; } 
+            try { 
+                showToast('Loading...'); 
+                const res = await fetch(url); 
+                if (!res.ok) throw new Error('Failed to fetch: ' + res.status);
+                let data = (res.headers.get('content-type') || '').includes('json') || url.endsWith('.json') ? await res.json() : Papa.parse(await res.text(), { header: true, dynamicTyping: true, skipEmptyLines: true }).data; 
+                if (!Array.isArray(data)) data = data.data || data.results || data.items || [data]; 
+                loadedDataUrl = url; 
+                handleParsedData(data, url.split('/').pop() || 'URL Data'); 
+            } catch (e) { 
+                showToast('Error: ' + e.message, 'error'); 
+            } 
+        }
         
         function handleParsedData(data, fileName) {
             if (!data?.length) { showToast('No data', 'error'); return; }
@@ -424,10 +665,11 @@
             document.getElementById('rowCount').textContent = data.length;
             document.getElementById('colCount').textContent = columns.length;
             document.getElementById('fileInfo').classList.add('show');
-            renderDataPreview(); setupFilterPanel();
+            renderDataPreview(); 
+            setupFilterPanel();
+            document.getElementById('layoutPanel').style.display = 'block';
             showToast(`Loaded ${data.length} rows`);
             
-            // Apply pending config if exists
             if (window.pendingConfig) {
                 applyConfigFromUrl(window.pendingConfig);
                 window.pendingConfig = null;
@@ -437,6 +679,11 @@
         function applyConfigFromUrl(config) {
             if (!config.sections) return;
             
+            // Set layout mode
+            if (config.layoutMode) {
+                setLayout(config.layoutMode);
+            }
+            
             // Set up filter columns if provided
             if (config.filterColumns && config.filterColumns.length) {
                 const filterSelect = document.getElementById('filterVarSelect');
@@ -445,155 +692,368 @@
                     if (option) option.selected = true;
                 });
                 updateFilters();
+                
+                // Apply filter values if provided
+                if (config.filterValues) {
+                    Object.entries(config.filterValues).forEach(([col, values]) => {
+                        if (Array.isArray(values)) {
+                            values.forEach(val => {
+                                const checkbox = document.querySelector(`#filter_${col} input[value="${val}"]`);
+                                if (checkbox) checkbox.checked = true;
+                            });
+                        }
+                    });
+                    applyFilters();
+                }
             }
             
             config.sections.forEach(s => {
                 sectionCounter++;
                 const section = { id: 'section_' + sectionCounter, title: s.title, rows: s.rows, cols: s.cols, cards: [] };
                 sections.push(section);
+                if (!activeSectionId) activeSectionId = section.id;
                 renderSectionFromConfig(section, s.cards);
             });
             
+            renderSectionTabs();
+            updateSectionVisibility();
             if (!isViewMode) showToast('Dashboard layout applied');
         }
         
         function renderSectionFromConfig(section, cardConfigs) {
             const container = document.getElementById('sectionsContainer');
             const addBtn = container.querySelector('.add-section-btn');
+            
+            const wrapper = document.createElement('div');
+            wrapper.className = 'section-content' + (layoutMode === 'none' || section.id === activeSectionId ? ' active' : '');
+            wrapper.id = 'content_' + section.id;
+            
             const div = document.createElement('div');
-            div.className = 'dashboard-section'; div.id = section.id;
+            div.className = 'dashboard-section'; 
+            div.id = section.id;
             div.innerHTML = `<div class="section-header"><input type="text" class="section-title-input" value="${section.title}" onchange="updateSectionTitle('${section.id}', this.value)" placeholder="Section Title"><div class="section-actions"><button class="section-btn" onclick="addCardToSection('${section.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Card</button><button class="section-btn delete" onclick="deleteSection('${section.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete</button></div></div><div class="section-body"><div class="section-grid" id="grid_${section.id}" style="grid-template-columns: repeat(${section.cols}, 1fr);"></div></div>`;
-            container.insertBefore(div, addBtn);
+            
+            wrapper.appendChild(div);
+            container.insertBefore(wrapper, addBtn);
             
             cardConfigs.forEach(cfg => {
                 const cardId = createCard(section.id);
                 const card = section.cards.find(c => c.id === cardId);
                 if (card && cfg.chartType) {
                     Object.assign(card, cfg);
-                    // Set card title in input
                     const titleInput = document.querySelector(`#${cardId} .card-title-input`);
                     if (titleInput && cfg.title) titleInput.value = cfg.title;
-                    // Render the widget
                     if (cfg.chartType !== 'map') renderWidget(card, section.id);
                 }
             });
         }
         
-        function renderDataPreview() { const preview = filteredData.slice(0, 5); let html = '<thead><tr>' + columns.map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>'; preview.forEach(r => { html += '<tr>' + columns.map(c => `<td>${r[c] ?? ''}</td>`).join('') + '</tr>'; }); if (filteredData.length > 5) html += `<tr><td colspan="${columns.length}" style="text-align:center;color:#999;">... ${filteredData.length - 5} more</td></tr>`; document.getElementById('previewTable').innerHTML = html + '</tbody>'; document.getElementById('dataPreview').classList.add('show'); }
+        function renderDataPreview() { 
+            const preview = filteredData.slice(0, 5); 
+            let html = '<thead><tr>' + columns.map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>'; 
+            preview.forEach(r => { html += '<tr>' + columns.map(c => `<td>${r[c] ?? ''}</td>`).join('') + '</tr>'; }); 
+            if (filteredData.length > 5) html += `<tr><td colspan="${columns.length}" style="text-align:center;color:#999;">... ${filteredData.length - 5} more</td></tr>`; 
+            document.getElementById('previewTable').innerHTML = html + '</tbody>'; 
+            document.getElementById('dataPreview').classList.add('show'); 
+        }
         
-        function setupFilterPanel() { document.getElementById('filterVarSelect').innerHTML = columns.map(c => `<option value="${c}">${c}</option>`).join(''); document.getElementById('filterPanel').style.display = 'block'; }
+        function setupFilterPanel() { 
+            // Only show categorical columns (with reasonable number of unique values)
+            const categoricalCols = columns.filter(col => {
+                const uniqueVals = new Set(uploadedData.map(r => r[col]));
+                return uniqueVals.size <= 50 && uniqueVals.size > 1;
+            });
+            document.getElementById('filterVarSelect').innerHTML = categoricalCols.map(c => `<option value="${c}">${c}</option>`).join(''); 
+            document.getElementById('filterPanel').style.display = 'block'; 
+        }
         
         function updateFilters() {
             const selected = Array.from(document.getElementById('filterVarSelect').selectedOptions).map(o => o.value);
             const container = document.getElementById('filterControls');
-            if (!selected.length) { container.style.display = 'none'; activeFilters = {}; filteredData = [...uploadedData]; refreshAllCharts(); return; }
-            container.style.display = 'flex'; container.innerHTML = '';
+            if (!selected.length) { 
+                container.style.display = 'none'; 
+                activeFilters = {}; 
+                filteredData = [...uploadedData]; 
+                refreshAllCharts(); 
+                return; 
+            }
+            container.style.display = 'flex'; 
+            container.innerHTML = '';
+            
             selected.forEach(col => {
                 const vals = [...new Set(uploadedData.map(r => r[col]))].filter(v => v != null && v !== '').sort();
-                const div = document.createElement('div'); div.className = 'filter-group';
-                div.innerHTML = `<label>${col}</label><select onchange="applyFilters()" data-column="${col}" id="filter_${col}"><option value="">All</option>${vals.map(v => `<option value="${v}">${v}</option>`).join('')}</select>`;
+                const div = document.createElement('div'); 
+                div.className = 'filter-group';
+                div.id = 'filter_' + col;
+                
+                let checkboxesHtml = vals.map(v => `
+                    <label class="checkbox-item">
+                        <input type="checkbox" value="${v}" onchange="applyFilters()" checked>
+                        <span>${v}</span>
+                    </label>
+                `).join('');
+                
+                div.innerHTML = `
+                    <div class="filter-group-header">
+                        <label class="filter-title">${col}</label>
+                        <span class="select-all-btn" onclick="toggleAllCheckboxes('${col}')">Toggle All</span>
+                    </div>
+                    <div class="checkbox-container">${checkboxesHtml}</div>
+                    <div class="filter-count"><span id="count_${col}">${vals.length}</span> of ${vals.length} selected</div>
+                `;
                 container.appendChild(div);
             });
+            
+            applyFilters();
+        }
+        
+        function toggleAllCheckboxes(col) {
+            const container = document.getElementById('filter_' + col);
+            const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            checkboxes.forEach(cb => cb.checked = !allChecked);
+            applyFilters();
         }
         
         function applyFilters() {
-            // Get current filter selections
             activeFilters = {};
-            document.querySelectorAll('#filterControls select').forEach(s => { if (s.value) activeFilters[s.dataset.column] = s.value; });
             
-            // Filter data based on all active filters
-            filteredData = uploadedData.filter(r => Object.entries(activeFilters).every(([c, v]) => String(r[c]) === String(v)));
-            
-            // Update each filter dropdown with cascading options
-            const filterCols = Array.from(document.getElementById('filterVarSelect').selectedOptions).map(o => o.value);
-            filterCols.forEach(col => {
-                const select = document.getElementById('filter_' + col);
-                if (!select) return;
-                const currentVal = select.value;
-                
-                // Get data filtered by OTHER filters (not this one)
-                const otherFilters = { ...activeFilters };
-                delete otherFilters[col];
-                const dataForThisFilter = uploadedData.filter(r => Object.entries(otherFilters).every(([c, v]) => String(r[c]) === String(v)));
-                
-                // Get available values from this filtered data
-                const availableVals = [...new Set(dataForThisFilter.map(r => r[col]))].filter(v => v != null && v !== '').sort();
-                
-                // Rebuild options
-                select.innerHTML = `<option value="">All</option>${availableVals.map(v => `<option value="${v}"${v == currentVal ? ' selected' : ''}>${v}</option>`).join('')}`;
+            // Collect checked values for each filter column
+            document.querySelectorAll('#filterControls .filter-group').forEach(group => {
+                const col = group.id.replace('filter_', '');
+                const checkedBoxes = group.querySelectorAll('input[type="checkbox"]:checked');
+                const checkedValues = Array.from(checkedBoxes).map(cb => cb.value);
+                if (checkedValues.length > 0) {
+                    activeFilters[col] = checkedValues;
+                }
             });
             
-            renderDataPreview(); refreshAllCharts();
+            // Filter data
+            filteredData = uploadedData.filter(r => {
+                return Object.entries(activeFilters).every(([col, values]) => {
+                    return values.includes(String(r[col]));
+                });
+            });
+            
+            // Update counts
+            Object.keys(activeFilters).forEach(col => {
+                const countEl = document.getElementById('count_' + col);
+                if (countEl) {
+                    countEl.textContent = activeFilters[col].length;
+                }
+            });
+            
+            // Update available options based on other filters (cascading)
+            const filterCols = Object.keys(activeFilters);
+            filterCols.forEach(col => {
+                const otherFilters = { ...activeFilters };
+                delete otherFilters[col];
+                
+                const dataForThisFilter = uploadedData.filter(r => 
+                    Object.entries(otherFilters).every(([c, vals]) => vals.includes(String(r[c])))
+                );
+                
+                const availableVals = new Set(dataForThisFilter.map(r => String(r[col])));
+                
+                const container = document.getElementById('filter_' + col);
+                if (container) {
+                    container.querySelectorAll('.checkbox-item').forEach(item => {
+                        const checkbox = item.querySelector('input');
+                        const isAvailable = availableVals.has(checkbox.value);
+                        item.style.opacity = isAvailable ? '1' : '0.4';
+                    });
+                }
+            });
+            
+            renderDataPreview(); 
+            refreshAllCharts();
             showToast(`Filtered: ${filteredData.length} rows`);
         }
         
-        function refreshAllCharts() { sections.forEach(s => s.cards.forEach(c => { if (c.chartType) renderWidget(c, s.id); })); }
+        function refreshAllCharts() { 
+            sections.forEach(s => s.cards.forEach(c => { 
+                if (c.chartType) renderWidget(c, s.id); 
+            })); 
+        }
         
-        function addSection() { if (!uploadedData.length) { showToast('Load data first', 'error'); return; } document.getElementById('newSectionTitle').value = ''; document.getElementById('newSectionRows').value = '2'; document.getElementById('newSectionCols').value = '3'; document.getElementById('sectionModal').classList.add('show'); }
+        function addSection() { 
+            if (!uploadedData.length) { showToast('Load data first', 'error'); return; } 
+            document.getElementById('newSectionTitle').value = ''; 
+            document.getElementById('newSectionRows').value = '2'; 
+            document.getElementById('newSectionCols').value = '3'; 
+            document.getElementById('sectionModal').classList.add('show'); 
+        }
         function closeSectionModal() { document.getElementById('sectionModal').classList.remove('show'); }
         
-        function createSection() { const title = document.getElementById('newSectionTitle').value || 'Section ' + (sections.length + 1); const rows = parseInt(document.getElementById('newSectionRows').value) || 2; const cols = parseInt(document.getElementById('newSectionCols').value) || 3; sectionCounter++; const section = { id: 'section_' + sectionCounter, title, rows, cols, cards: [] }; sections.push(section); renderSection(section); closeSectionModal(); showToast(`Created ${rows}×${cols} section`); }
+        function createSection() { 
+            const title = document.getElementById('newSectionTitle').value || 'Section ' + (sections.length + 1); 
+            const rows = parseInt(document.getElementById('newSectionRows').value) || 2; 
+            const cols = parseInt(document.getElementById('newSectionCols').value) || 3; 
+            sectionCounter++; 
+            const section = { id: 'section_' + sectionCounter, title, rows, cols, cards: [] }; 
+            sections.push(section); 
+            if (!activeSectionId) activeSectionId = section.id;
+            renderSection(section); 
+            renderSectionTabs();
+            updateSectionVisibility();
+            closeSectionModal(); 
+            showToast(`Created ${rows}×${cols} section`); 
+        }
         
-        function renderSection(section) { const container = document.getElementById('sectionsContainer'); const addBtn = container.querySelector('.add-section-btn'); const div = document.createElement('div'); div.className = 'dashboard-section'; div.id = section.id; div.innerHTML = `<div class="section-header"><input type="text" class="section-title-input" value="${section.title}" onchange="updateSectionTitle('${section.id}', this.value)" placeholder="Section Title"><div class="section-actions"><button class="section-btn" onclick="addCardToSection('${section.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Card</button><button class="section-btn delete" onclick="deleteSection('${section.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete</button></div></div><div class="section-body"><div class="section-grid" id="grid_${section.id}" style="grid-template-columns: repeat(${section.cols}, 1fr);"></div></div>`; container.insertBefore(div, addBtn); for (let i = 0; i < section.rows * section.cols; i++) createCard(section.id); }
+        function renderSection(section) { 
+            const container = document.getElementById('sectionsContainer'); 
+            const addBtn = container.querySelector('.add-section-btn'); 
+            
+            const wrapper = document.createElement('div');
+            wrapper.className = 'section-content' + (layoutMode === 'none' || section.id === activeSectionId ? ' active' : '');
+            wrapper.id = 'content_' + section.id;
+            
+            const div = document.createElement('div'); 
+            div.className = 'dashboard-section'; 
+            div.id = section.id; 
+            div.innerHTML = `<div class="section-header"><input type="text" class="section-title-input" value="${section.title}" onchange="updateSectionTitle('${section.id}', this.value)" placeholder="Section Title"><div class="section-actions"><button class="section-btn" onclick="addCardToSection('${section.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Card</button><button class="section-btn delete" onclick="deleteSection('${section.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete</button></div></div><div class="section-body"><div class="section-grid" id="grid_${section.id}" style="grid-template-columns: repeat(${section.cols}, 1fr);"></div></div>`; 
+            
+            wrapper.appendChild(div);
+            container.insertBefore(wrapper, addBtn); 
+            for (let i = 0; i < section.rows * section.cols; i++) createCard(section.id); 
+        }
         
-        function updateSectionTitle(sectionId, title) { const s = sections.find(s => s.id === sectionId); if (s) s.title = title; }
-        function deleteSection(sectionId) { if (!confirm('Delete section?')) return; const s = sections.find(s => s.id === sectionId); if (s) s.cards.forEach(c => { if (charts[c.id]) { charts[c.id].destroy(); delete charts[c.id]; } if (maps[c.id]) { maps[c.id].remove(); delete maps[c.id]; } }); sections = sections.filter(s => s.id !== sectionId); document.getElementById(sectionId)?.remove(); showToast('Section deleted'); }
+        function updateSectionTitle(sectionId, title) { 
+            const s = sections.find(s => s.id === sectionId); 
+            if (s) { 
+                s.title = title; 
+                renderSectionTabs();
+            }
+        }
+        
+        function deleteSection(sectionId) { 
+            if (!confirm('Delete section?')) return; 
+            const s = sections.find(s => s.id === sectionId); 
+            if (s) s.cards.forEach(c => { 
+                if (charts[c.id]) { charts[c.id].destroy(); delete charts[c.id]; } 
+                if (maps[c.id]) { maps[c.id].remove(); delete maps[c.id]; } 
+            }); 
+            sections = sections.filter(s => s.id !== sectionId); 
+            document.getElementById('content_' + sectionId)?.remove(); 
+            
+            if (activeSectionId === sectionId) {
+                activeSectionId = sections.length > 0 ? sections[0].id : null;
+            }
+            renderSectionTabs();
+            updateSectionVisibility();
+            showToast('Section deleted'); 
+        }
+        
         function addCardToSection(sectionId) { createCard(sectionId); showToast('Card added'); }
         
-        function createCard(sectionId) { cardCounter++; const id = 'card_' + cardCounter; const section = sections.find(s => s.id === sectionId); if (!section) return; section.cards.push({ id, title: '', chartType: null, chartPalette: 'icf' }); const grid = document.getElementById('grid_' + sectionId); const div = document.createElement('div'); div.className = 'canvas-card'; div.id = id; div.innerHTML = `<div class="card-header"><div class="card-title-area"><div class="drag-handle"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg></div><input type="text" class="card-title-input" value="" placeholder="Enter card title..." onchange="updateCardTitle('${sectionId}', '${id}', this.value)"></div><div class="card-actions"><button class="card-btn" onclick="openWidgetModal('${sectionId}', '${id}')" title="Configure"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button><button class="card-btn edit" onclick="editWidget('${sectionId}', '${id}')" title="Edit" style="display:none;" id="editBtn_${id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="card-btn download" onclick="downloadCardImage('${id}')" title="Download Image" style="display:none;" id="downloadBtn_${id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button><button class="card-btn delete" onclick="deleteCard('${sectionId}', '${id}')" title="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div><div class="card-body" id="body_${id}"><div class="card-placeholder"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg><p>Click + to configure</p></div></div>`; grid.appendChild(div); return id; }
+        function createCard(sectionId) { 
+            cardCounter++; 
+            const id = 'card_' + cardCounter; 
+            const section = sections.find(s => s.id === sectionId); 
+            if (!section) return; 
+            section.cards.push({ id, title: '', chartType: null, chartPalette: 'icf' }); 
+            const grid = document.getElementById('grid_' + sectionId); 
+            const div = document.createElement('div'); 
+            div.className = 'canvas-card'; 
+            div.id = id; 
+            div.innerHTML = `<div class="card-header"><div class="card-title-area"><div class="drag-handle"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg></div><input type="text" class="card-title-input" value="" placeholder="Enter card title..." onchange="updateCardTitle('${sectionId}', '${id}', this.value)"></div><div class="card-actions"><button class="card-btn" onclick="openWidgetModal('${sectionId}', '${id}')" title="Configure"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button><button class="card-btn edit" onclick="editWidget('${sectionId}', '${id}')" title="Edit" style="display:none;" id="editBtn_${id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="card-btn download" onclick="downloadCardImage('${id}')" title="Download Image" style="display:none;" id="downloadBtn_${id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button><button class="card-btn delete" onclick="deleteCard('${sectionId}', '${id}')" title="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div><div class="card-body" id="body_${id}"><div class="card-placeholder"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg><p>Click + to configure</p></div></div>`; 
+            grid.appendChild(div); 
+            return id; 
+        }
         
-        function updateCardTitle(sectionId, cardId, title) { const s = sections.find(s => s.id === sectionId); const c = s?.cards.find(c => c.id === cardId); if (c) c.title = title; }
-        function deleteCard(sectionId, cardId) { if (!confirm('Delete card?')) return; if (charts[cardId]) { charts[cardId].destroy(); delete charts[cardId]; } if (maps[cardId]) { maps[cardId].remove(); delete maps[cardId]; } const s = sections.find(s => s.id === sectionId); if (s) s.cards = s.cards.filter(c => c.id !== cardId); document.getElementById(cardId)?.remove(); showToast('Card deleted'); }
+        function updateCardTitle(sectionId, cardId, title) { 
+            const s = sections.find(s => s.id === sectionId); 
+            const c = s?.cards.find(c => c.id === cardId); 
+            if (c) c.title = title; 
+        }
         
-        // Download card as image
-        function downloadCardImage(cardId) {
+        function deleteCard(sectionId, cardId) { 
+            if (!confirm('Delete card?')) return; 
+            if (charts[cardId]) { charts[cardId].destroy(); delete charts[cardId]; } 
+            if (maps[cardId]) { maps[cardId].remove(); delete maps[cardId]; } 
+            const s = sections.find(s => s.id === sectionId); 
+            if (s) s.cards = s.cards.filter(c => c.id !== cardId); 
+            document.getElementById(cardId)?.remove(); 
+            showToast('Card deleted'); 
+        }
+        
+        // Improved download with better rendering
+        async function downloadCardImage(cardId) {
             const cardEl = document.getElementById(cardId);
             if (!cardEl) return;
             
             showToast('Generating image...');
             
-            html2canvas(cardEl, { 
-                backgroundColor: '#ffffff', 
-                scale: 2,
-                useCORS: true,
-                allowTaint: true,
-                scrollX: 0,
-                scrollY: 0,
-                windowWidth: cardEl.scrollWidth,
-                windowHeight: cardEl.scrollHeight,
-                width: cardEl.scrollWidth,
-                height: cardEl.scrollHeight,
-                logging: false
-            }).then(canvas => {
+            try {
+                // Clone the card for clean rendering
+                const clone = cardEl.cloneNode(true);
+                clone.style.position = 'absolute';
+                clone.style.left = '-9999px';
+                clone.style.width = cardEl.offsetWidth + 'px';
+                document.body.appendChild(clone);
+                
+                // Hide action buttons in clone
+                clone.querySelectorAll('.card-btn').forEach(btn => btn.style.display = 'none');
+                clone.querySelector('.drag-handle').style.display = 'none';
+                
+                // Make title input look like text
+                const titleInput = clone.querySelector('.card-title-input');
+                if (titleInput) {
+                    titleInput.style.background = 'transparent';
+                    titleInput.style.border = 'none';
+                }
+                
+                const canvas = await html2canvas(clone, { 
+                    backgroundColor: '#ffffff', 
+                    scale: 3,
+                    useCORS: true,
+                    allowTaint: true,
+                    logging: false,
+                    imageTimeout: 15000,
+                    onclone: (clonedDoc) => {
+                        // Additional cleanup in cloned document
+                        const clonedCard = clonedDoc.body.querySelector('.canvas-card');
+                        if (clonedCard) {
+                            clonedCard.style.boxShadow = '0 4px 20px rgba(0,0,0,0.15)';
+                            clonedCard.style.border = '1px solid #ddd';
+                        }
+                    }
+                });
+                
+                document.body.removeChild(clone);
+                
                 const link = document.createElement('a');
                 const card = sections.flatMap(s => s.cards).find(c => c.id === cardId);
-                const filename = (card?.title || cardId) + '.png';
-                link.download = filename.replace(/[^a-z0-9]/gi, '_') + '.png';
-                link.href = canvas.toDataURL('image/png');
+                const filename = (card?.title || cardId).replace(/[^a-z0-9]/gi, '_');
+                link.download = filename + '.png';
+                link.href = canvas.toDataURL('image/png', 1.0);
                 link.click();
                 showToast('Image downloaded');
-            }).catch(err => {
+            } catch (err) {
                 console.error(err);
                 showToast('Error generating image', 'error');
-            });
+            }
         }
         
-        // Share as URL
+        // Improved share functionality
         function shareAsUrl() {
             if (!sections.length) { showToast('No dashboard to share', 'error'); return; }
             if (!uploadedData.length) { showToast('Load data first to share', 'error'); return; }
             
-            // Check if data was loaded from URL
-            const dataUrl = loadedDataUrl || document.getElementById('dataUrl').value.trim();
-            if (!dataUrl) {
-                showToast('Data must be loaded from URL to share. Upload data via URL tab first.', 'error');
-                return;
-            }
-            
-            // Get selected filter columns
             const filterCols = Array.from(document.getElementById('filterVarSelect').selectedOptions).map(o => o.value);
             
+            // Collect current filter values
+            const filterValues = {};
+            filterCols.forEach(col => {
+                const container = document.getElementById('filter_' + col);
+                if (container) {
+                    const checked = Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+                    filterValues[col] = checked;
+                }
+            });
+            
             const config = {
+                layoutMode: layoutMode,
                 sections: sections.map(s => ({
                     title: s.title, rows: s.rows, cols: s.cols,
                     cards: s.cards.map(c => ({
@@ -601,14 +1061,36 @@
                         valueColumn: c.valueColumn, aggType: c.aggType, chartPalette: c.chartPalette,
                         bins: c.bins, mapDataType: c.mapDataType, dataJoinCol: c.dataJoinCol,
                         geoJoinCol: c.geoJoinCol, palette: c.palette, legendTitle: c.legendTitle,
-                        customIntervals: c.customIntervals
+                        customIntervals: c.customIntervals, xColumn: c.xColumn, yColumn: c.yColumn,
+                        sizeColumn: c.sizeColumn, groupColumn: c.groupColumn, tableColumns: c.tableColumns
                     }))
                 })),
-                filterColumns: filterCols
+                filterColumns: filterCols,
+                filterValues: filterValues
             };
             
-            const encoded = btoa(JSON.stringify(config));
-            const url = window.location.origin + window.location.pathname + '?view=1&config=' + encoded + '&data=' + encodeURIComponent(dataUrl);
+            let url;
+            const dataUrl = loadedDataUrl || document.getElementById('dataUrl').value.trim();
+            
+            if (dataUrl) {
+                // Data loaded from URL
+                document.getElementById('shareWarning').style.display = 'none';
+                const encoded = btoa(encodeURIComponent(JSON.stringify(config)));
+                url = window.location.origin + window.location.pathname + '?view=1&config=' + encoded + '&data=' + encodeURIComponent(dataUrl);
+            } else {
+                // Data uploaded from file - embed a sample
+                document.getElementById('shareWarning').style.display = 'block';
+                config.embeddedData = uploadedData.slice(0, 500); // Limit to 500 rows
+                try {
+                    const encoded = btoa(encodeURIComponent(JSON.stringify(config)));
+                    url = window.location.origin + window.location.pathname + '?view=1&config=' + encoded;
+                } catch (e) {
+                    // Data too large
+                    config.embeddedData = uploadedData.slice(0, 100);
+                    const encoded = btoa(encodeURIComponent(JSON.stringify(config)));
+                    url = window.location.origin + window.location.pathname + '?view=1&config=' + encoded;
+                }
+            }
             
             document.getElementById('shareUrlInput').value = url;
             document.getElementById('shareModal').classList.add('show');
@@ -619,65 +1101,750 @@
         function copyShareUrl() {
             const input = document.getElementById('shareUrlInput');
             input.select();
-            document.execCommand('copy');
-            showToast('URL copied to clipboard');
+            navigator.clipboard.writeText(input.value).then(() => {
+                showToast('URL copied to clipboard');
+            }).catch(() => {
+                document.execCommand('copy');
+                showToast('URL copied to clipboard');
+            });
         }
         
-        function handleGeoUpload(e) { const file = e.target.files[0]; if (!file) return; const ext = file.name.split('.').pop().toLowerCase(); if (['geojson', 'json'].includes(ext)) { const reader = new FileReader(); reader.onload = e => { try { geoData = JSON.parse(e.target.result); processGeoData(file.name); } catch (err) { showToast('Error: ' + err.message, 'error'); } }; reader.readAsText(file); } else if (ext === 'zip') { const reader = new FileReader(); reader.onload = async e => { try { geoData = await shp(e.target.result); if (Array.isArray(geoData)) geoData = geoData[0]; processGeoData(file.name); } catch (err) { showToast('Error: ' + err.message, 'error'); } }; reader.readAsArrayBuffer(file); } }
+        function downloadShareHtml() {
+            // Generate a standalone HTML file
+            const html = `<!DOCTYPE html>
+<html><head><title>ICF Dashboard</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>window.location.href = "${document.getElementById('shareUrlInput').value}";<\/script>
+</head><body><p>Redirecting to dashboard...</p></body></html>`;
+            
+            const blob = new Blob([html], { type: 'text/html' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'dashboard.html';
+            a.click();
+            showToast('HTML file downloaded');
+        }
         
-        function processGeoData(fileName) { if (!geoData?.features) { showToast('Invalid geo data', 'error'); return; } geoProperties = geoData.features[0]?.properties ? Object.keys(geoData.features[0].properties) : []; document.getElementById('geoFileName').textContent = fileName; document.getElementById('featureCount').textContent = geoData.features.length; document.getElementById('geoInfo').classList.add('show'); document.getElementById('joinConfig').style.display = 'block'; document.getElementById('dataJoinCol').innerHTML = '<option value="">-- Select --</option>' + columns.map(c => `<option value="${c}">${c}</option>`).join(''); document.getElementById('geoJoinCol').innerHTML = '<option value="">-- Select --</option>' + geoProperties.map(p => `<option value="${p}">${p}</option>`).join(''); document.getElementById('mapValueCol').innerHTML = '<option value="">-- Select --</option>' + columns.map(c => `<option value="${c}">${c}</option>`).join(''); renderPaletteOptions(false); showToast(`Loaded ${geoData.features.length} features`); validateApply(); }
+        function handleGeoUpload(e) { 
+            const file = e.target.files[0]; 
+            if (!file) return; 
+            const ext = file.name.split('.').pop().toLowerCase(); 
+            if (['geojson', 'json'].includes(ext)) { 
+                const reader = new FileReader(); 
+                reader.onload = e => { 
+                    try { 
+                        geoData = JSON.parse(e.target.result); 
+                        processGeoData(file.name); 
+                    } catch (err) { 
+                        showToast('Error: ' + err.message, 'error'); 
+                    } 
+                }; 
+                reader.readAsText(file); 
+            } else if (ext === 'zip') { 
+                const reader = new FileReader(); 
+                reader.onload = async e => { 
+                    try { 
+                        geoData = await shp(e.target.result); 
+                        if (Array.isArray(geoData)) geoData = geoData[0]; 
+                        processGeoData(file.name); 
+                    } catch (err) { 
+                        showToast('Error: ' + err.message, 'error'); 
+                    } 
+                }; 
+                reader.readAsArrayBuffer(file); 
+            } 
+        }
         
-        function renderPaletteOptions(isCat = false) { const palettes = isCat ? ['category10', 'paired', 'set3'] : ['blues', 'greens', 'reds', 'oranges', 'purples', 'rdylgn', 'spectral']; document.getElementById('paletteGrid').innerHTML = palettes.map(n => `<div class="palette-option ${selectedPalette === n ? 'selected' : ''}" onclick="selectPalette('${n}')" title="${n}">${colorPalettes[n].slice(0, 5).map(c => `<div style="background:${c}"></div>`).join('')}</div>`).join(''); }
-        function renderChartPaletteOptions() { const palettes = ['icf', 'category10', 'paired', 'set3', 'blues', 'greens', 'spectral']; document.getElementById('chartPaletteGrid').innerHTML = palettes.map(n => `<div class="palette-option ${selectedChartPalette === n ? 'selected' : ''}" onclick="selectChartPalette('${n}')" title="${n}">${colorPalettes[n].slice(0, 5).map(c => `<div style="background:${c}"></div>`).join('')}</div>`).join(''); }
+        function processGeoData(fileName) { 
+            if (!geoData?.features) { showToast('Invalid geo data', 'error'); return; } 
+            geoProperties = geoData.features[0]?.properties ? Object.keys(geoData.features[0].properties) : []; 
+            document.getElementById('geoFileName').textContent = fileName; 
+            document.getElementById('featureCount').textContent = geoData.features.length; 
+            document.getElementById('geoInfo').classList.add('show'); 
+            document.getElementById('joinConfig').style.display = 'block'; 
+            document.getElementById('dataJoinCol').innerHTML = '<option value="">-- Select --</option>' + columns.map(c => `<option value="${c}">${c}</option>`).join(''); 
+            document.getElementById('geoJoinCol').innerHTML = '<option value="">-- Select --</option>' + geoProperties.map(p => `<option value="${p}">${p}</option>`).join(''); 
+            document.getElementById('mapValueCol').innerHTML = '<option value="">-- Select --</option>' + columns.map(c => `<option value="${c}">${c}</option>`).join(''); 
+            renderPaletteOptions(false); 
+            showToast(`Loaded ${geoData.features.length} features`); 
+            validateApply(); 
+        }
+        
+        function renderPaletteOptions(isCat = false) { 
+            const palettes = isCat ? ['category10', 'paired', 'set3'] : ['blues', 'greens', 'reds', 'oranges', 'purples', 'rdylgn', 'spectral', 'viridis', 'plasma']; 
+            document.getElementById('paletteGrid').innerHTML = palettes.map(n => `<div class="palette-option ${selectedPalette === n ? 'selected' : ''}" onclick="selectPalette('${n}')" title="${n}">${colorPalettes[n].slice(0, 5).map(c => `<div style="background:${c}"></div>`).join('')}</div>`).join(''); 
+        }
+        
+        function renderChartPaletteOptions() { 
+            const palettes = ['icf', 'category10', 'paired', 'set3', 'blues', 'greens', 'spectral', 'viridis', 'plasma']; 
+            document.getElementById('chartPaletteGrid').innerHTML = palettes.map(n => `<div class="palette-option ${selectedChartPalette === n ? 'selected' : ''}" onclick="selectChartPalette('${n}')" title="${n}">${colorPalettes[n].slice(0, 5).map(c => `<div style="background:${c}"></div>`).join('')}</div>`).join(''); 
+        }
+        
         function selectPalette(n) { selectedPalette = n; document.querySelectorAll('#paletteGrid .palette-option').forEach(p => p.classList.toggle('selected', p.title === n)); }
         function selectChartPalette(n) { selectedChartPalette = n; document.querySelectorAll('#chartPaletteGrid .palette-option').forEach(p => p.classList.toggle('selected', p.title === n)); }
-        function toggleMapOptions() { const isCat = document.getElementById('mapDataType').value === 'categorical'; document.getElementById('intervalsSection').style.display = isCat ? 'none' : 'block'; renderPaletteOptions(isCat); selectedPalette = isCat ? 'category10' : 'blues'; }
+        function toggleMapOptions() { 
+            const isCat = document.getElementById('mapDataType').value === 'categorical'; 
+            document.getElementById('intervalsSection').style.display = isCat ? 'none' : 'block'; 
+            renderPaletteOptions(isCat); 
+            selectedPalette = isCat ? 'category10' : 'blues'; 
+        }
         
-        function openWidgetModal(sectionId, cardId) { currentSectionId = sectionId; currentCardId = cardId; selectedChartType = null; isEditMode = false; geoData = null; document.getElementById('modalTitle').textContent = 'Configure Widget'; document.querySelectorAll('.widget-option').forEach(o => o.classList.remove('selected')); document.getElementById('applyBtn').disabled = true; document.getElementById('mapSection').style.display = 'none'; document.getElementById('chartColorSection').style.display = 'none'; document.getElementById('geoInfo').classList.remove('show'); document.getElementById('joinConfig').style.display = 'none'; document.getElementById('geoInput').value = ''; buildColumnSelectors(); document.getElementById('widgetModal').classList.add('show'); }
+        function openWidgetModal(sectionId, cardId) { 
+            currentSectionId = sectionId; 
+            currentCardId = cardId; 
+            selectedChartType = null; 
+            isEditMode = false; 
+            geoData = null; 
+            document.getElementById('modalTitle').textContent = 'Configure Widget'; 
+            document.querySelectorAll('.widget-option').forEach(o => o.classList.remove('selected')); 
+            document.getElementById('applyBtn').disabled = true; 
+            document.getElementById('mapSection').style.display = 'none'; 
+            document.getElementById('chartColorSection').style.display = 'none'; 
+            document.getElementById('geoInfo').classList.remove('show'); 
+            document.getElementById('joinConfig').style.display = 'none'; 
+            document.getElementById('geoInput').value = ''; 
+            buildColumnSelectors(); 
+            document.getElementById('widgetModal').classList.add('show'); 
+        }
         
-        function editWidget(sectionId, cardId) { const s = sections.find(s => s.id === sectionId); const card = s?.cards.find(c => c.id === cardId); if (!card?.chartType) return; currentSectionId = sectionId; currentCardId = cardId; isEditMode = true; selectedChartType = card.chartType; selectedChartPalette = card.chartPalette || 'icf'; if (card.chartType === 'map' && card.geoData) { geoData = card.geoData; geoProperties = geoData.features[0]?.properties ? Object.keys(geoData.features[0].properties) : []; selectedPalette = card.palette || 'blues'; } document.getElementById('modalTitle').textContent = 'Edit Widget'; document.querySelectorAll('.widget-option').forEach(o => o.classList.toggle('selected', o.dataset.type === card.chartType)); document.getElementById('mapSection').style.display = card.chartType === 'map' ? 'block' : 'none'; document.getElementById('chartColorSection').style.display = !['map', 'kpi'].includes(card.chartType) ? 'block' : 'none'; buildColumnSelectors(); setTimeout(() => { if (card.chartType === 'kpi') { if (document.getElementById('valueCol')) document.getElementById('valueCol').value = card.valueColumn || ''; if (document.getElementById('aggType')) document.getElementById('aggType').value = card.aggType || 'sum'; } else if (card.chartType === 'histogram') { if (document.getElementById('valueCol')) document.getElementById('valueCol').value = card.valueColumn || ''; if (document.getElementById('binCount')) document.getElementById('binCount').value = card.bins || 10; } else if (card.chartType === 'map' && geoData) { document.getElementById('geoInfo').classList.add('show'); document.getElementById('geoFileName').textContent = 'Previously loaded'; document.getElementById('featureCount').textContent = geoData.features.length; document.getElementById('joinConfig').style.display = 'block'; document.getElementById('dataJoinCol').innerHTML = '<option value="">-- Select --</option>' + columns.map(c => `<option value="${c}">${c}</option>`).join(''); document.getElementById('geoJoinCol').innerHTML = '<option value="">-- Select --</option>' + geoProperties.map(p => `<option value="${p}">${p}</option>`).join(''); document.getElementById('mapValueCol').innerHTML = '<option value="">-- Select --</option>' + columns.map(c => `<option value="${c}">${c}</option>`).join(''); document.getElementById('dataJoinCol').value = card.dataJoinCol || ''; document.getElementById('geoJoinCol').value = card.geoJoinCol || ''; document.getElementById('mapValueCol').value = card.valueColumn || ''; document.getElementById('mapDataType').value = card.mapDataType || 'numeric'; document.getElementById('legendTitle').value = card.legendTitle || ''; document.getElementById('customIntervals').value = card.customIntervals || ''; toggleMapOptions(); } else { if (document.getElementById('labelCol')) document.getElementById('labelCol').value = card.labelColumn || ''; if (document.getElementById('valueCol')) document.getElementById('valueCol').value = card.valueColumn || ''; } if (!['map', 'kpi'].includes(card.chartType)) renderChartPaletteOptions(); validateApply(); }, 100); document.getElementById('widgetModal').classList.add('show'); }
+        function editWidget(sectionId, cardId) { 
+            const s = sections.find(s => s.id === sectionId); 
+            const card = s?.cards.find(c => c.id === cardId); 
+            if (!card?.chartType) return; 
+            currentSectionId = sectionId; 
+            currentCardId = cardId; 
+            isEditMode = true; 
+            selectedChartType = card.chartType; 
+            selectedChartPalette = card.chartPalette || 'icf'; 
+            if (card.chartType === 'map' && card.geoData) { 
+                geoData = card.geoData; 
+                geoProperties = geoData.features[0]?.properties ? Object.keys(geoData.features[0].properties) : []; 
+                selectedPalette = card.palette || 'blues'; 
+            } 
+            document.getElementById('modalTitle').textContent = 'Edit Widget'; 
+            document.querySelectorAll('.widget-option').forEach(o => o.classList.toggle('selected', o.dataset.type === card.chartType)); 
+            document.getElementById('mapSection').style.display = card.chartType === 'map' ? 'block' : 'none'; 
+            document.getElementById('chartColorSection').style.display = !['map', 'kpi', 'table'].includes(card.chartType) ? 'block' : 'none'; 
+            buildColumnSelectors(); 
+            setTimeout(() => { 
+                if (card.chartType === 'kpi') { 
+                    if (document.getElementById('valueCol')) document.getElementById('valueCol').value = card.valueColumn || ''; 
+                    if (document.getElementById('aggType')) document.getElementById('aggType').value = card.aggType || 'sum'; 
+                } else if (card.chartType === 'histogram') { 
+                    if (document.getElementById('valueCol')) document.getElementById('valueCol').value = card.valueColumn || ''; 
+                    if (document.getElementById('binCount')) document.getElementById('binCount').value = card.bins || 10; 
+                } else if (card.chartType === 'scatter' || card.chartType === 'bubble') {
+                    if (document.getElementById('xCol')) document.getElementById('xCol').value = card.xColumn || '';
+                    if (document.getElementById('yCol')) document.getElementById('yCol').value = card.yColumn || '';
+                    if (card.chartType === 'bubble' && document.getElementById('sizeCol')) {
+                        document.getElementById('sizeCol').value = card.sizeColumn || '';
+                    }
+                } else if (card.chartType === 'table') {
+                    // Handle table columns selection
+                } else if (card.chartType === 'map' && geoData) { 
+                    document.getElementById('geoInfo').classList.add('show'); 
+                    document.getElementById('geoFileName').textContent = 'Previously loaded'; 
+                    document.getElementById('featureCount').textContent = geoData.features.length; 
+                    document.getElementById('joinConfig').style.display = 'block'; 
+                    document.getElementById('dataJoinCol').innerHTML = '<option value="">-- Select --</option>' + columns.map(c => `<option value="${c}">${c}</option>`).join(''); 
+                    document.getElementById('geoJoinCol').innerHTML = '<option value="">-- Select --</option>' + geoProperties.map(p => `<option value="${p}">${p}</option>`).join(''); 
+                    document.getElementById('mapValueCol').innerHTML = '<option value="">-- Select --</option>' + columns.map(c => `<option value="${c}">${c}</option>`).join(''); 
+                    document.getElementById('dataJoinCol').value = card.dataJoinCol || ''; 
+                    document.getElementById('geoJoinCol').value = card.geoJoinCol || ''; 
+                    document.getElementById('mapValueCol').value = card.valueColumn || ''; 
+                    document.getElementById('mapDataType').value = card.mapDataType || 'numeric'; 
+                    document.getElementById('legendTitle').value = card.legendTitle || ''; 
+                    document.getElementById('customIntervals').value = card.customIntervals || ''; 
+                    toggleMapOptions(); 
+                } else if (card.chartType === 'stackedBar') {
+                    if (document.getElementById('labelCol')) document.getElementById('labelCol').value = card.labelColumn || ''; 
+                    if (document.getElementById('valueCol')) document.getElementById('valueCol').value = card.valueColumn || ''; 
+                    if (document.getElementById('groupCol')) document.getElementById('groupCol').value = card.groupColumn || '';
+                } else { 
+                    if (document.getElementById('labelCol')) document.getElementById('labelCol').value = card.labelColumn || ''; 
+                    if (document.getElementById('valueCol')) document.getElementById('valueCol').value = card.valueColumn || ''; 
+                } 
+                if (!['map', 'kpi', 'table'].includes(card.chartType)) renderChartPaletteOptions(); 
+                validateApply(); 
+            }, 100); 
+            document.getElementById('widgetModal').classList.add('show'); 
+        }
         
         function closeWidgetModal() { document.getElementById('widgetModal').classList.remove('show'); currentCardId = null; currentSectionId = null; }
         
-        function selectChartType(type) { selectedChartType = type; document.querySelectorAll('.widget-option').forEach(o => o.classList.toggle('selected', o.dataset.type === type)); document.getElementById('mapSection').style.display = type === 'map' ? 'block' : 'none'; document.getElementById('chartColorSection').style.display = !['map', 'kpi'].includes(type) ? 'block' : 'none'; if (!['map', 'kpi'].includes(type)) renderChartPaletteOptions(); buildColumnSelectors(); validateApply(); }
+        function selectChartType(type) { 
+            selectedChartType = type; 
+            document.querySelectorAll('.widget-option').forEach(o => o.classList.toggle('selected', o.dataset.type === type)); 
+            document.getElementById('mapSection').style.display = type === 'map' ? 'block' : 'none'; 
+            document.getElementById('chartColorSection').style.display = !['map', 'kpi', 'table'].includes(type) ? 'block' : 'none'; 
+            if (!['map', 'kpi', 'table'].includes(type)) renderChartPaletteOptions(); 
+            buildColumnSelectors(); 
+            validateApply(); 
+        }
         
-        function buildColumnSelectors() { const c = document.getElementById('columnSelectors'); if (!selectedChartType) { c.innerHTML = '<p style="color:#999;font-size:12px;">Select a chart type first</p>'; return; } let html = ''; if (selectedChartType === 'kpi') html = `<label class="config-label">Value Column</label><select class="column-select" id="valueCol" onchange="validateApply()"><option value="">-- Select --</option>${columns.map(col => `<option value="${col}">${col}</option>`).join('')}</select><label class="config-label">Aggregation</label><select class="column-select" id="aggType"><option value="sum">Sum</option><option value="avg">Average</option><option value="count">Count</option><option value="min">Min</option><option value="max">Max</option></select>`; else if (selectedChartType === 'histogram') html = `<label class="config-label">Numeric Column</label><select class="column-select" id="valueCol" onchange="validateApply()"><option value="">-- Select --</option>${columns.map(col => `<option value="${col}">${col}</option>`).join('')}</select><label class="config-label">Bins</label><input type="number" class="column-select" id="binCount" value="10" min="2" max="50" style="width:100px;">`; else if (selectedChartType === 'map') html = '<p style="color:#666;font-size:12px;">Upload geographic data below.</p>'; else html = `<label class="config-label">Label Column (X-Axis)</label><select class="column-select" id="labelCol" onchange="validateApply()"><option value="">-- Select --</option>${columns.map(col => `<option value="${col}">${col}</option>`).join('')}</select><label class="config-label">Value Column (Y-Axis)</label><select class="column-select" id="valueCol" onchange="validateApply()"><option value="">-- Select --</option>${columns.map(col => `<option value="${col}">${col}</option>`).join('')}</select>`; c.innerHTML = html; }
-        
-        function validateApply() { let valid = false; if (['kpi', 'histogram'].includes(selectedChartType)) valid = !!document.getElementById('valueCol')?.value; else if (selectedChartType === 'map') valid = geoData && document.getElementById('dataJoinCol')?.value && document.getElementById('geoJoinCol')?.value && document.getElementById('mapValueCol')?.value; else if (selectedChartType) valid = document.getElementById('labelCol')?.value && document.getElementById('valueCol')?.value; document.getElementById('applyBtn').disabled = !valid; }
-        
-        function applyWidget() { if (!currentCardId || !selectedChartType) return; const s = sections.find(s => s.id === currentSectionId); const card = s?.cards.find(c => c.id === currentCardId); if (!card) return; card.chartType = selectedChartType; card.chartPalette = selectedChartPalette; if (selectedChartType === 'kpi') { card.valueColumn = document.getElementById('valueCol').value; card.aggType = document.getElementById('aggType').value; } else if (selectedChartType === 'histogram') { card.valueColumn = document.getElementById('valueCol').value; card.bins = parseInt(document.getElementById('binCount').value) || 10; } else if (selectedChartType === 'map') { card.dataJoinCol = document.getElementById('dataJoinCol').value; card.geoJoinCol = document.getElementById('geoJoinCol').value; card.valueColumn = document.getElementById('mapValueCol').value; card.mapDataType = document.getElementById('mapDataType').value; card.palette = selectedPalette; card.legendTitle = document.getElementById('legendTitle').value || card.valueColumn; card.customIntervals = document.getElementById('customIntervals').value; card.geoData = JSON.parse(JSON.stringify(geoData)); } else { card.labelColumn = document.getElementById('labelCol').value; card.valueColumn = document.getElementById('valueCol').value; } renderWidget(card, currentSectionId); document.getElementById('editBtn_' + card.id).style.display = 'flex'; document.getElementById('downloadBtn_' + card.id).style.display = 'flex'; closeWidgetModal(); showToast(isEditMode ? 'Updated' : 'Applied'); }
-        
-        function renderWidget(card, sectionId) { const body = document.getElementById('body_' + card.id); if (!body) return; if (charts[card.id]) { charts[card.id].destroy(); delete charts[card.id]; } if (maps[card.id]) { maps[card.id].remove(); delete maps[card.id]; } if (card.chartType === 'kpi') { const val = calculateKPI(card.valueColumn, card.aggType); body.innerHTML = `<div class="kpi-display"><div class="kpi-value">${formatNumber(val)}</div><div class="kpi-label">${card.aggType} of ${card.valueColumn}</div></div>`; } else if (card.chartType === 'histogram') renderHistogram(card, body); else if (card.chartType === 'map') renderMap(card, body); else renderChart(card, body); document.getElementById('editBtn_' + card.id).style.display = 'flex'; document.getElementById('downloadBtn_' + card.id).style.display = 'flex'; }
-        
-        function calculateKPI(col, agg) { const vals = filteredData.map(r => parseFloat(r[col])).filter(v => !isNaN(v)); if (!vals.length) return 0; switch (agg) { case 'sum': return vals.reduce((a, b) => a + b, 0); case 'avg': return vals.reduce((a, b) => a + b, 0) / vals.length; case 'count': return vals.length; case 'min': return Math.min(...vals); case 'max': return Math.max(...vals); default: return vals.reduce((a, b) => a + b, 0); } }
-        
-        function renderChart(card, body) { const agg = {}; filteredData.forEach(r => { const l = String(r[card.labelColumn] || 'Unknown'); agg[l] = (agg[l] || 0) + (parseFloat(r[card.valueColumn]) || 0); }); const labels = Object.keys(agg), values = Object.values(agg), palette = colorPalettes[card.chartPalette] || colorPalettes.icf; body.innerHTML = `<div class="chart-wrapper"><canvas id="chart_${card.id}"></canvas></div>`; setTimeout(() => { const ctx = document.getElementById('chart_' + card.id); if (ctx) charts[card.id] = new Chart(ctx, { type: card.chartType === 'area' ? 'line' : card.chartType, data: { labels, datasets: [{ label: card.valueColumn, data: values, backgroundColor: ['line', 'area'].includes(card.chartType) ? palette[0] + '33' : labels.map((_, i) => palette[i % palette.length]), borderColor: palette[0], borderWidth: 2, fill: card.chartType === 'area', tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: ['pie', 'doughnut'].includes(card.chartType), position: 'bottom' } }, scales: ['bar', 'line', 'area'].includes(card.chartType) ? { y: { beginAtZero: true } } : undefined } }); }, 50); }
-        
-        function renderHistogram(card, body) { const vals = filteredData.map(r => parseFloat(r[card.valueColumn])).filter(v => !isNaN(v)); if (!vals.length) { body.innerHTML = '<p style="color:#999;">No data</p>'; return; } const min = Math.min(...vals), max = Math.max(...vals), binW = (max - min) / card.bins, bins = Array(card.bins).fill(0), labels = []; for (let i = 0; i < card.bins; i++) labels.push(`${(min + i * binW).toFixed(0)}-${(min + (i + 1) * binW).toFixed(0)}`); vals.forEach(v => { let idx = Math.floor((v - min) / binW); if (idx >= card.bins) idx = card.bins - 1; if (idx < 0) idx = 0; bins[idx]++; }); const palette = colorPalettes[card.chartPalette] || colorPalettes.icf; body.innerHTML = `<div class="chart-wrapper"><canvas id="chart_${card.id}"></canvas></div>`; setTimeout(() => { const ctx = document.getElementById('chart_' + card.id); if (ctx) charts[card.id] = new Chart(ctx, { type: 'bar', data: { labels, datasets: [{ label: 'Frequency', data: bins, backgroundColor: palette[0], borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } } }); }, 50); }
-        
-        function renderMap(card, body) { body.innerHTML = `<div class="map-wrapper"><div class="map-container" id="map_${card.id}"></div><div class="map-legend" id="legend_${card.id}"></div><div class="map-scale" id="scale_${card.id}"></div></div>`; setTimeout(() => { const mapEl = document.getElementById('map_' + card.id); if (!mapEl || !card.geoData) return; const map = L.map(mapEl, { zoomControl: true, attributionControl: false }).setView([8.5, -11.5], 7); maps[card.id] = map; const dataByKey = {}, isCat = card.mapDataType === 'categorical'; filteredData.forEach(r => { const k = String(r[card.dataJoinCol]); if (isCat) { if (!dataByKey[k]) dataByKey[k] = {}; dataByKey[k][String(r[card.valueColumn])] = (dataByKey[k][String(r[card.valueColumn])] || 0) + 1; } else dataByKey[k] = (dataByKey[k] || 0) + (parseFloat(r[card.valueColumn]) || 0); }); const palette = colorPalettes[card.palette] || colorPalettes.blues; let legendHtml = ''; if (isCat) { const cats = [...new Set(Object.values(dataByKey).flatMap(o => Object.keys(o)))].sort(); const catColors = {}; cats.forEach((c, i) => catColors[c] = palette[i % palette.length]); const dominant = {}; Object.entries(dataByKey).forEach(([k, v]) => { const s = Object.entries(v).sort((a, b) => b[1] - a[1]); if (s.length) dominant[k] = s[0][0]; }); const totals = {}; filteredData.forEach(r => { const c = String(r[card.valueColumn]); totals[c] = (totals[c] || 0) + 1; }); legendHtml = `<div class="legend-title">${card.legendTitle}</div><div class="legend-scale">${cats.map(c => `<div class="legend-item"><div class="legend-color" style="background:${catColors[c]}"></div><span class="legend-label">${c} (${totals[c] || 0})</span></div>`).join('')}</div>`; L.geoJSON(card.geoData, { style: f => ({ fillColor: catColors[dominant[String(f.properties[card.geoJoinCol])]] || '#ccc', weight: 1, color: '#333', fillOpacity: 0.7 }), onEachFeature: (f, l) => { const k = String(f.properties[card.geoJoinCol]); l.bindPopup(`<strong>${k}</strong><br>${Object.entries(dataByKey[k] || {}).map(([c, n]) => `${c}: ${n}`).join('<br>') || 'No data'}`); } }).addTo(map).getBounds && map.fitBounds(L.geoJSON(card.geoData).getBounds()); } else { let breaks = []; if (card.customIntervals) breaks = card.customIntervals.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n)).sort((a, b) => a - b); const vals = Object.values(dataByKey).filter(v => !isNaN(v)); const minV = vals.length ? Math.min(...vals) : 0, maxV = vals.length ? Math.max(...vals) : 1; if (breaks.length < 2) { const step = (maxV - minV) / (palette.length - 1); breaks = Array.from({ length: palette.length }, (_, i) => minV + i * step); } function getColor(v) { if (v === undefined || isNaN(v)) return '#ccc'; for (let i = breaks.length - 1; i >= 0; i--) { if (v >= breaks[i]) return palette[Math.min(i, palette.length - 1)]; } return palette[0]; } 
-            // Legend with lower numbers at top (ascending order)
-            legendHtml = `<div class="legend-title">${card.legendTitle}</div><div class="legend-scale">`;
-            for (let i = 0; i < breaks.length; i++) {
-                const label = i === breaks.length - 1 ? `≥ ${formatNumber(breaks[i])}` : `${formatNumber(breaks[i])} - ${formatNumber(breaks[i + 1])}`;
-                legendHtml += `<div class="legend-item"><div class="legend-color" style="background:${palette[Math.min(i, palette.length - 1)]}"></div><span class="legend-label">${label}</span></div>`;
+        function buildColumnSelectors() { 
+            const c = document.getElementById('columnSelectors'); 
+            if (!selectedChartType) { 
+                c.innerHTML = '<p style="color:#999;font-size:12px;">Select a chart type first</p>'; 
+                return; 
+            } 
+            let html = ''; 
+            if (selectedChartType === 'kpi') {
+                html = `<label class="config-label">Value Column</label><select class="column-select" id="valueCol" onchange="validateApply()"><option value="">-- Select --</option>${columns.map(col => `<option value="${col}">${col}</option>`).join('')}</select><label class="config-label">Aggregation</label><select class="column-select" id="aggType"><option value="sum">Sum</option><option value="avg">Average</option><option value="count">Count</option><option value="min">Min</option><option value="max">Max</option></select>`; 
+            } else if (selectedChartType === 'histogram') {
+                html = `<label class="config-label">Numeric Column</label><select class="column-select" id="valueCol" onchange="validateApply()"><option value="">-- Select --</option>${columns.map(col => `<option value="${col}">${col}</option>`).join('')}</select><label class="config-label">Bins</label><input type="number" class="column-select" id="binCount" value="10" min="2" max="50" style="width:100px;">`; 
+            } else if (selectedChartType === 'map') {
+                html = '<p style="color:#666;font-size:12px;">Upload geographic data below.</p>'; 
+            } else if (selectedChartType === 'scatter') {
+                html = `<label class="config-label">X-Axis Column</label><select class="column-select" id="xCol" onchange="validateApply()"><option value="">-- Select --</option>${columns.map(col => `<option value="${col}">${col}</option>`).join('')}</select><label class="config-label">Y-Axis Column</label><select class="column-select" id="yCol" onchange="validateApply()"><option value="">-- Select --</option>${columns.map(col => `<option value="${col}">${col}</option>`).join('')}</select><label class="config-label">Group By (Optional)</label><select class="column-select" id="groupCol"><option value="">-- None --</option>${columns.map(col => `<option value="${col}">${col}</option>`).join('')}</select>`;
+            } else if (selectedChartType === 'bubble') {
+                html = `<label class="config-label">X-Axis Column</label><select class="column-select" id="xCol" onchange="validateApply()"><option value="">-- Select --</option>${columns.map(col => `<option value="${col}">${col}</option>`).join('')}</select><label class="config-label">Y-Axis Column</label><select class="column-select" id="yCol" onchange="validateApply()"><option value="">-- Select --</option>${columns.map(col => `<option value="${col}">${col}</option>`).join('')}</select><label class="config-label">Bubble Size Column</label><select class="column-select" id="sizeCol" onchange="validateApply()"><option value="">-- Select --</option>${columns.map(col => `<option value="${col}">${col}</option>`).join('')}</select><label class="config-label">Group By (Optional)</label><select class="column-select" id="groupCol"><option value="">-- None --</option>${columns.map(col => `<option value="${col}">${col}</option>`).join('')}</select>`;
+            } else if (selectedChartType === 'radar') {
+                html = `<label class="config-label">Category Column</label><select class="column-select" id="labelCol" onchange="validateApply()"><option value="">-- Select --</option>${columns.map(col => `<option value="${col}">${col}</option>`).join('')}</select><label class="config-label">Value Column</label><select class="column-select" id="valueCol" onchange="validateApply()"><option value="">-- Select --</option>${columns.map(col => `<option value="${col}">${col}</option>`).join('')}</select><label class="config-label">Group By (Optional)</label><select class="column-select" id="groupCol"><option value="">-- None --</option>${columns.map(col => `<option value="${col}">${col}</option>`).join('')}</select>`;
+            } else if (selectedChartType === 'stackedBar' || selectedChartType === 'horizontalBar') {
+                html = `<label class="config-label">Category Column (X-Axis)</label><select class="column-select" id="labelCol" onchange="validateApply()"><option value="">-- Select --</option>${columns.map(col => `<option value="${col}">${col}</option>`).join('')}</select><label class="config-label">Value Column (Y-Axis)</label><select class="column-select" id="valueCol" onchange="validateApply()"><option value="">-- Select --</option>${columns.map(col => `<option value="${col}">${col}</option>`).join('')}</select><label class="config-label">Stack/Group By (Optional)</label><select class="column-select" id="groupCol"><option value="">-- None --</option>${columns.map(col => `<option value="${col}">${col}</option>`).join('')}</select>`;
+            } else if (selectedChartType === 'table') {
+                html = `<label class="config-label">Select Columns to Display</label><select class="column-select" id="tableCols" multiple size="6" style="height:auto;">${columns.map(col => `<option value="${col}" selected>${col}</option>`).join('')}</select><p style="font-size:11px;color:#666;margin-top:5px;">Hold Ctrl/Cmd to select multiple columns</p>`;
+            } else {
+                html = `<label class="config-label">Label Column (X-Axis)</label><select class="column-select" id="labelCol" onchange="validateApply()"><option value="">-- Select --</option>${columns.map(col => `<option value="${col}">${col}</option>`).join('')}</select><label class="config-label">Value Column (Y-Axis)</label><select class="column-select" id="valueCol" onchange="validateApply()"><option value="">-- Select --</option>${columns.map(col => `<option value="${col}">${col}</option>`).join('')}</select>`; 
             }
-            legendHtml += '</div>';
-            const geoLayer = L.geoJSON(card.geoData, { style: f => ({ fillColor: getColor(dataByKey[String(f.properties[card.geoJoinCol])]), weight: 1, color: '#333', fillOpacity: 0.7 }), onEachFeature: (f, l) => { const k = String(f.properties[card.geoJoinCol]); l.bindPopup(`<strong>${k}</strong><br>${card.valueColumn}: ${dataByKey[k] !== undefined ? formatNumber(dataByKey[k]) : 'No data'}`); } }).addTo(map); map.fitBounds(geoLayer.getBounds()); } document.getElementById('legend_' + card.id).innerHTML = legendHtml; const bounds = map.getBounds(); const dist = map.distance(bounds.getSouthWest(), bounds.getSouthEast()) / 4 / 1000; const scaleLabel = dist >= 1 ? (Math.round(dist / 10) * 10 || Math.round(dist)) + ' km' : Math.round(dist * 1000) + ' m'; document.getElementById('scale_' + card.id).innerHTML = `<div class="scale-bar" style="width:50px;"></div><div>${scaleLabel}</div>`; }, 100); }
+            c.innerHTML = html; 
+        }
         
-        function formatNumber(n) { if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M'; if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K'; return n % 1 === 0 ? n.toLocaleString() : n.toFixed(2); }
+        function validateApply() { 
+            let valid = false; 
+            if (['kpi', 'histogram'].includes(selectedChartType)) {
+                valid = !!document.getElementById('valueCol')?.value; 
+            } else if (selectedChartType === 'map') {
+                valid = geoData && document.getElementById('dataJoinCol')?.value && document.getElementById('geoJoinCol')?.value && document.getElementById('mapValueCol')?.value; 
+            } else if (selectedChartType === 'scatter') {
+                valid = document.getElementById('xCol')?.value && document.getElementById('yCol')?.value;
+            } else if (selectedChartType === 'bubble') {
+                valid = document.getElementById('xCol')?.value && document.getElementById('yCol')?.value && document.getElementById('sizeCol')?.value;
+            } else if (selectedChartType === 'table') {
+                valid = true;
+            } else if (selectedChartType) {
+                valid = document.getElementById('labelCol')?.value && document.getElementById('valueCol')?.value; 
+            }
+            document.getElementById('applyBtn').disabled = !valid; 
+        }
         
-        function clearAll() { if (!confirm('Clear everything?')) return; Object.values(charts).forEach(c => c.destroy()); Object.values(maps).forEach(m => m.remove()); charts = {}; maps = {}; sections = []; uploadedData = []; filteredData = []; columns = []; sectionCounter = 0; cardCounter = 0; document.getElementById('sectionsContainer').innerHTML = `<div class="add-section-btn" onclick="addSection()"><svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span>Add Dashboard Section</span><p style="font-size:12px;margin-top:5px;font-weight:400;">Load data first, then add sections</p></div>`; document.getElementById('fileInfo').classList.remove('show'); document.getElementById('dataPreview').classList.remove('show'); document.getElementById('filterPanel').style.display = 'none'; document.getElementById('fileInput').value = ''; document.getElementById('dataUrl').value = ''; showToast('Cleared'); }
+        function applyWidget() { 
+            if (!currentCardId || !selectedChartType) return; 
+            const s = sections.find(s => s.id === currentSectionId); 
+            const card = s?.cards.find(c => c.id === currentCardId); 
+            if (!card) return; 
+            card.chartType = selectedChartType; 
+            card.chartPalette = selectedChartPalette; 
+            
+            if (selectedChartType === 'kpi') { 
+                card.valueColumn = document.getElementById('valueCol').value; 
+                card.aggType = document.getElementById('aggType').value; 
+            } else if (selectedChartType === 'histogram') { 
+                card.valueColumn = document.getElementById('valueCol').value; 
+                card.bins = parseInt(document.getElementById('binCount').value) || 10; 
+            } else if (selectedChartType === 'scatter') {
+                card.xColumn = document.getElementById('xCol').value;
+                card.yColumn = document.getElementById('yCol').value;
+                card.groupColumn = document.getElementById('groupCol')?.value || '';
+            } else if (selectedChartType === 'bubble') {
+                card.xColumn = document.getElementById('xCol').value;
+                card.yColumn = document.getElementById('yCol').value;
+                card.sizeColumn = document.getElementById('sizeCol').value;
+                card.groupColumn = document.getElementById('groupCol')?.value || '';
+            } else if (selectedChartType === 'table') {
+                card.tableColumns = Array.from(document.getElementById('tableCols').selectedOptions).map(o => o.value);
+            } else if (selectedChartType === 'map') { 
+                card.dataJoinCol = document.getElementById('dataJoinCol').value; 
+                card.geoJoinCol = document.getElementById('geoJoinCol').value; 
+                card.valueColumn = document.getElementById('mapValueCol').value; 
+                card.mapDataType = document.getElementById('mapDataType').value; 
+                card.palette = selectedPalette; 
+                card.legendTitle = document.getElementById('legendTitle').value || card.valueColumn; 
+                card.customIntervals = document.getElementById('customIntervals').value; 
+                card.geoData = JSON.parse(JSON.stringify(geoData)); 
+            } else if (['stackedBar', 'horizontalBar', 'radar'].includes(selectedChartType)) {
+                card.labelColumn = document.getElementById('labelCol').value; 
+                card.valueColumn = document.getElementById('valueCol').value;
+                card.groupColumn = document.getElementById('groupCol')?.value || '';
+            } else { 
+                card.labelColumn = document.getElementById('labelCol').value; 
+                card.valueColumn = document.getElementById('valueCol').value; 
+            } 
+            
+            renderWidget(card, currentSectionId); 
+            document.getElementById('editBtn_' + card.id).style.display = 'flex'; 
+            document.getElementById('downloadBtn_' + card.id).style.display = 'flex'; 
+            closeWidgetModal(); 
+            showToast(isEditMode ? 'Updated' : 'Applied'); 
+        }
         
-        function exportConfig() { const config = { sections: sections.map(s => ({ title: s.title, rows: s.rows, cols: s.cols, cards: s.cards.map(c => ({ title: c.title, chartType: c.chartType, labelColumn: c.labelColumn, valueColumn: c.valueColumn })) })) }; const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'dashboard-config.json'; a.click(); showToast('Exported'); }
+        function renderWidget(card, sectionId) { 
+            const body = document.getElementById('body_' + card.id); 
+            if (!body) return; 
+            if (charts[card.id]) { charts[card.id].destroy(); delete charts[card.id]; } 
+            if (maps[card.id]) { maps[card.id].remove(); delete maps[card.id]; } 
+            
+            if (card.chartType === 'kpi') { 
+                const val = calculateKPI(card.valueColumn, card.aggType); 
+                body.innerHTML = `<div class="kpi-display"><div class="kpi-value">${formatNumber(val)}</div><div class="kpi-label">${card.aggType} of ${card.valueColumn}</div></div>`; 
+            } else if (card.chartType === 'histogram') {
+                renderHistogram(card, body); 
+            } else if (card.chartType === 'map') {
+                renderMap(card, body); 
+            } else if (card.chartType === 'scatter') {
+                renderScatter(card, body);
+            } else if (card.chartType === 'bubble') {
+                renderBubble(card, body);
+            } else if (card.chartType === 'radar') {
+                renderRadar(card, body);
+            } else if (card.chartType === 'table') {
+                renderTable(card, body);
+            } else if (card.chartType === 'stackedBar') {
+                renderStackedBar(card, body);
+            } else if (card.chartType === 'horizontalBar') {
+                renderHorizontalBar(card, body);
+            } else {
+                renderChart(card, body); 
+            }
+            
+            document.getElementById('editBtn_' + card.id).style.display = 'flex'; 
+            document.getElementById('downloadBtn_' + card.id).style.display = 'flex'; 
+        }
         
-        function showToast(msg, type = 'success') { const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast show' + (type === 'error' ? ' error' : ''); setTimeout(() => t.classList.remove('show'), 3000); }
+        function calculateKPI(col, agg) { 
+            const vals = filteredData.map(r => parseFloat(r[col])).filter(v => !isNaN(v)); 
+            if (!vals.length) return 0; 
+            switch (agg) { 
+                case 'sum': return vals.reduce((a, b) => a + b, 0); 
+                case 'avg': return vals.reduce((a, b) => a + b, 0) / vals.length; 
+                case 'count': return vals.length; 
+                case 'min': return Math.min(...vals); 
+                case 'max': return Math.max(...vals); 
+                default: return vals.reduce((a, b) => a + b, 0); 
+            } 
+        }
+        
+        function renderChart(card, body) { 
+            const agg = {}; 
+            filteredData.forEach(r => { 
+                const l = String(r[card.labelColumn] || 'Unknown'); 
+                agg[l] = (agg[l] || 0) + (parseFloat(r[card.valueColumn]) || 0); 
+            }); 
+            const labels = Object.keys(agg), values = Object.values(agg), palette = colorPalettes[card.chartPalette] || colorPalettes.icf; 
+            body.innerHTML = `<div class="chart-wrapper"><canvas id="chart_${card.id}"></canvas></div>`; 
+            setTimeout(() => { 
+                const ctx = document.getElementById('chart_' + card.id); 
+                if (ctx) {
+                    const chartType = card.chartType === 'area' ? 'line' : card.chartType;
+                    charts[card.id] = new Chart(ctx, { 
+                        type: chartType, 
+                        data: { 
+                            labels, 
+                            datasets: [{ 
+                                label: card.valueColumn, 
+                                data: values, 
+                                backgroundColor: ['line', 'area'].includes(card.chartType) ? palette[0] + '33' : labels.map((_, i) => palette[i % palette.length]), 
+                                borderColor: ['line', 'area'].includes(card.chartType) ? palette[0] : labels.map((_, i) => palette[i % palette.length]),
+                                borderWidth: 2, 
+                                fill: card.chartType === 'area', 
+                                tension: 0.3 
+                            }] 
+                        }, 
+                        options: { 
+                            responsive: true, 
+                            maintainAspectRatio: false, 
+                            plugins: { 
+                                legend: { display: ['pie', 'doughnut', 'polarArea'].includes(card.chartType), position: 'bottom' } 
+                            }, 
+                            scales: ['bar', 'line', 'area'].includes(card.chartType) ? { y: { beginAtZero: true } } : undefined 
+                        } 
+                    }); 
+                }
+            }, 50); 
+        }
+        
+        function renderHistogram(card, body) { 
+            const vals = filteredData.map(r => parseFloat(r[card.valueColumn])).filter(v => !isNaN(v)); 
+            if (!vals.length) { body.innerHTML = '<p style="color:#999;">No data</p>'; return; } 
+            const min = Math.min(...vals), max = Math.max(...vals), binW = (max - min) / card.bins, bins = Array(card.bins).fill(0), labels = []; 
+            for (let i = 0; i < card.bins; i++) labels.push(`${(min + i * binW).toFixed(0)}-${(min + (i + 1) * binW).toFixed(0)}`); 
+            vals.forEach(v => { let idx = Math.floor((v - min) / binW); if (idx >= card.bins) idx = card.bins - 1; if (idx < 0) idx = 0; bins[idx]++; }); 
+            const palette = colorPalettes[card.chartPalette] || colorPalettes.icf; 
+            body.innerHTML = `<div class="chart-wrapper"><canvas id="chart_${card.id}"></canvas></div>`; 
+            setTimeout(() => { 
+                const ctx = document.getElementById('chart_' + card.id); 
+                if (ctx) charts[card.id] = new Chart(ctx, { type: 'bar', data: { labels, datasets: [{ label: 'Frequency', data: bins, backgroundColor: palette[0], borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } } }); 
+            }, 50); 
+        }
+        
+        function renderScatter(card, body) {
+            const data = filteredData.map(r => ({
+                x: parseFloat(r[card.xColumn]),
+                y: parseFloat(r[card.yColumn]),
+                group: card.groupColumn ? r[card.groupColumn] : 'All'
+            })).filter(d => !isNaN(d.x) && !isNaN(d.y));
+            
+            const palette = colorPalettes[card.chartPalette] || colorPalettes.icf;
+            const groups = [...new Set(data.map(d => d.group))];
+            
+            const datasets = groups.map((g, i) => ({
+                label: g,
+                data: data.filter(d => d.group === g).map(d => ({ x: d.x, y: d.y })),
+                backgroundColor: palette[i % palette.length] + 'aa',
+                borderColor: palette[i % palette.length],
+                pointRadius: 5
+            }));
+            
+            body.innerHTML = `<div class="chart-wrapper"><canvas id="chart_${card.id}"></canvas></div>`;
+            setTimeout(() => {
+                const ctx = document.getElementById('chart_' + card.id);
+                if (ctx) charts[card.id] = new Chart(ctx, {
+                    type: 'scatter',
+                    data: { datasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: groups.length > 1, position: 'bottom' } },
+                        scales: {
+                            x: { title: { display: true, text: card.xColumn } },
+                            y: { title: { display: true, text: card.yColumn } }
+                        }
+                    }
+                });
+            }, 50);
+        }
+        
+        function renderBubble(card, body) {
+            const data = filteredData.map(r => ({
+                x: parseFloat(r[card.xColumn]),
+                y: parseFloat(r[card.yColumn]),
+                r: Math.sqrt(parseFloat(r[card.sizeColumn]) || 1) * 3,
+                group: card.groupColumn ? r[card.groupColumn] : 'All'
+            })).filter(d => !isNaN(d.x) && !isNaN(d.y));
+            
+            const palette = colorPalettes[card.chartPalette] || colorPalettes.icf;
+            const groups = [...new Set(data.map(d => d.group))];
+            
+            const datasets = groups.map((g, i) => ({
+                label: g,
+                data: data.filter(d => d.group === g),
+                backgroundColor: palette[i % palette.length] + '88',
+                borderColor: palette[i % palette.length]
+            }));
+            
+            body.innerHTML = `<div class="chart-wrapper"><canvas id="chart_${card.id}"></canvas></div>`;
+            setTimeout(() => {
+                const ctx = document.getElementById('chart_' + card.id);
+                if (ctx) charts[card.id] = new Chart(ctx, {
+                    type: 'bubble',
+                    data: { datasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: groups.length > 1, position: 'bottom' } },
+                        scales: {
+                            x: { title: { display: true, text: card.xColumn } },
+                            y: { title: { display: true, text: card.yColumn } }
+                        }
+                    }
+                });
+            }, 50);
+        }
+        
+        function renderRadar(card, body) {
+            const agg = {};
+            const groups = card.groupColumn ? [...new Set(filteredData.map(r => r[card.groupColumn]))] : ['Value'];
+            
+            filteredData.forEach(r => {
+                const label = String(r[card.labelColumn] || 'Unknown');
+                const group = card.groupColumn ? r[card.groupColumn] : 'Value';
+                if (!agg[label]) agg[label] = {};
+                agg[label][group] = (agg[label][group] || 0) + (parseFloat(r[card.valueColumn]) || 0);
+            });
+            
+            const labels = Object.keys(agg);
+            const palette = colorPalettes[card.chartPalette] || colorPalettes.icf;
+            
+            const datasets = groups.map((g, i) => ({
+                label: g,
+                data: labels.map(l => agg[l][g] || 0),
+                backgroundColor: palette[i % palette.length] + '33',
+                borderColor: palette[i % palette.length],
+                borderWidth: 2
+            }));
+            
+            body.innerHTML = `<div class="chart-wrapper"><canvas id="chart_${card.id}"></canvas></div>`;
+            setTimeout(() => {
+                const ctx = document.getElementById('chart_' + card.id);
+                if (ctx) charts[card.id] = new Chart(ctx, {
+                    type: 'radar',
+                    data: { labels, datasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: groups.length > 1, position: 'bottom' } }
+                    }
+                });
+            }, 50);
+        }
+        
+        function renderStackedBar(card, body) {
+            const agg = {};
+            const groups = card.groupColumn ? [...new Set(filteredData.map(r => r[card.groupColumn]))] : ['Value'];
+            
+            filteredData.forEach(r => {
+                const label = String(r[card.labelColumn] || 'Unknown');
+                const group = card.groupColumn ? r[card.groupColumn] : 'Value';
+                if (!agg[label]) agg[label] = {};
+                agg[label][group] = (agg[label][group] || 0) + (parseFloat(r[card.valueColumn]) || 0);
+            });
+            
+            const labels = Object.keys(agg);
+            const palette = colorPalettes[card.chartPalette] || colorPalettes.icf;
+            
+            const datasets = groups.map((g, i) => ({
+                label: g,
+                data: labels.map(l => agg[l][g] || 0),
+                backgroundColor: palette[i % palette.length],
+                borderWidth: 1
+            }));
+            
+            body.innerHTML = `<div class="chart-wrapper"><canvas id="chart_${card.id}"></canvas></div>`;
+            setTimeout(() => {
+                const ctx = document.getElementById('chart_' + card.id);
+                if (ctx) charts[card.id] = new Chart(ctx, {
+                    type: 'bar',
+                    data: { labels, datasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: groups.length > 1, position: 'bottom' } },
+                        scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
+                    }
+                });
+            }, 50);
+        }
+        
+        function renderHorizontalBar(card, body) {
+            const agg = {};
+            const groups = card.groupColumn ? [...new Set(filteredData.map(r => r[card.groupColumn]))] : ['Value'];
+            
+            filteredData.forEach(r => {
+                const label = String(r[card.labelColumn] || 'Unknown');
+                const group = card.groupColumn ? r[card.groupColumn] : 'Value';
+                if (!agg[label]) agg[label] = {};
+                agg[label][group] = (agg[label][group] || 0) + (parseFloat(r[card.valueColumn]) || 0);
+            });
+            
+            const labels = Object.keys(agg);
+            const palette = colorPalettes[card.chartPalette] || colorPalettes.icf;
+            
+            const datasets = groups.map((g, i) => ({
+                label: g,
+                data: labels.map(l => agg[l][g] || 0),
+                backgroundColor: palette[i % palette.length],
+                borderWidth: 1
+            }));
+            
+            body.innerHTML = `<div class="chart-wrapper"><canvas id="chart_${card.id}"></canvas></div>`;
+            setTimeout(() => {
+                const ctx = document.getElementById('chart_' + card.id);
+                if (ctx) charts[card.id] = new Chart(ctx, {
+                    type: 'bar',
+                    data: { labels, datasets },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: groups.length > 1, position: 'bottom' } },
+                        scales: { x: { beginAtZero: true } }
+                    }
+                });
+            }, 50);
+        }
+        
+        function renderTable(card, body) {
+            const cols = card.tableColumns || columns;
+            const data = filteredData.slice(0, 100);
+            
+            let html = `<div class="table-wrapper"><table class="data-table"><thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>`;
+            data.forEach(r => {
+                html += `<tr>${cols.map(c => `<td>${r[c] ?? ''}</td>`).join('')}</tr>`;
+            });
+            if (filteredData.length > 100) {
+                html += `<tr><td colspan="${cols.length}" style="text-align:center;color:#666;font-style:italic;">Showing 100 of ${filteredData.length} rows</td></tr>`;
+            }
+            html += '</tbody></table></div>';
+            body.innerHTML = html;
+        }
+        
+        function renderMap(card, body) { 
+            body.innerHTML = `<div class="map-wrapper"><div class="map-container" id="map_${card.id}"></div><div class="map-legend" id="legend_${card.id}"></div><div class="map-scale" id="scale_${card.id}"></div></div>`; 
+            setTimeout(() => { 
+                const mapEl = document.getElementById('map_' + card.id); 
+                if (!mapEl || !card.geoData) return; 
+                const map = L.map(mapEl, { zoomControl: true, attributionControl: false }).setView([8.5, -11.5], 7); 
+                maps[card.id] = map; 
+                const dataByKey = {}, isCat = card.mapDataType === 'categorical'; 
+                filteredData.forEach(r => { 
+                    const k = String(r[card.dataJoinCol]); 
+                    if (isCat) { 
+                        if (!dataByKey[k]) dataByKey[k] = {}; 
+                        dataByKey[k][String(r[card.valueColumn])] = (dataByKey[k][String(r[card.valueColumn])] || 0) + 1; 
+                    } else {
+                        dataByKey[k] = (dataByKey[k] || 0) + (parseFloat(r[card.valueColumn]) || 0); 
+                    }
+                }); 
+                const palette = colorPalettes[card.palette] || colorPalettes.blues; 
+                let legendHtml = ''; 
+                if (isCat) { 
+                    const cats = [...new Set(Object.values(dataByKey).flatMap(o => Object.keys(o)))].sort(); 
+                    const catColors = {}; 
+                    cats.forEach((c, i) => catColors[c] = palette[i % palette.length]); 
+                    const dominant = {}; 
+                    Object.entries(dataByKey).forEach(([k, v]) => { 
+                        const s = Object.entries(v).sort((a, b) => b[1] - a[1]); 
+                        if (s.length) dominant[k] = s[0][0]; 
+                    }); 
+                    const totals = {}; 
+                    filteredData.forEach(r => { const c = String(r[card.valueColumn]); totals[c] = (totals[c] || 0) + 1; }); 
+                    legendHtml = `<div class="legend-title">${card.legendTitle}</div><div class="legend-scale">${cats.map(c => `<div class="legend-item"><div class="legend-color" style="background:${catColors[c]}"></div><span class="legend-label">${c} (${totals[c] || 0})</span></div>`).join('')}</div>`; 
+                    L.geoJSON(card.geoData, { 
+                        style: f => ({ fillColor: catColors[dominant[String(f.properties[card.geoJoinCol])]] || '#ccc', weight: 1, color: '#333', fillOpacity: 0.7 }), 
+                        onEachFeature: (f, l) => { 
+                            const k = String(f.properties[card.geoJoinCol]); 
+                            l.bindPopup(`<strong>${k}</strong><br>${Object.entries(dataByKey[k] || {}).map(([c, n]) => `${c}: ${n}`).join('<br>') || 'No data'}`); 
+                        } 
+                    }).addTo(map).getBounds && map.fitBounds(L.geoJSON(card.geoData).getBounds()); 
+                } else { 
+                    let breaks = []; 
+                    if (card.customIntervals) breaks = card.customIntervals.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n)).sort((a, b) => a - b); 
+                    const vals = Object.values(dataByKey).filter(v => !isNaN(v)); 
+                    const minV = vals.length ? Math.min(...vals) : 0, maxV = vals.length ? Math.max(...vals) : 1; 
+                    if (breaks.length < 2) { 
+                        const step = (maxV - minV) / (palette.length - 1); 
+                        breaks = Array.from({ length: palette.length }, (_, i) => minV + i * step); 
+                    } 
+                    function getColor(v) { 
+                        if (v === undefined || isNaN(v)) return '#ccc'; 
+                        for (let i = breaks.length - 1; i >= 0; i--) { 
+                            if (v >= breaks[i]) return palette[Math.min(i, palette.length - 1)]; 
+                        } 
+                        return palette[0]; 
+                    } 
+                    legendHtml = `<div class="legend-title">${card.legendTitle}</div><div class="legend-scale">`; 
+                    for (let i = 0; i < breaks.length; i++) { 
+                        const label = i === breaks.length - 1 ? `≥ ${formatNumber(breaks[i])}` : `${formatNumber(breaks[i])} - ${formatNumber(breaks[i + 1])}`; 
+                        legendHtml += `<div class="legend-item"><div class="legend-color" style="background:${palette[Math.min(i, palette.length - 1)]}"></div><span class="legend-label">${label}</span></div>`; 
+                    } 
+                    legendHtml += '</div>'; 
+                    const geoLayer = L.geoJSON(card.geoData, { 
+                        style: f => ({ fillColor: getColor(dataByKey[String(f.properties[card.geoJoinCol])]), weight: 1, color: '#333', fillOpacity: 0.7 }), 
+                        onEachFeature: (f, l) => { 
+                            const k = String(f.properties[card.geoJoinCol]); 
+                            l.bindPopup(`<strong>${k}</strong><br>${card.valueColumn}: ${dataByKey[k] !== undefined ? formatNumber(dataByKey[k]) : 'No data'}`); 
+                        } 
+                    }).addTo(map); 
+                    map.fitBounds(geoLayer.getBounds()); 
+                } 
+                document.getElementById('legend_' + card.id).innerHTML = legendHtml; 
+                const bounds = map.getBounds(); 
+                const dist = map.distance(bounds.getSouthWest(), bounds.getSouthEast()) / 4 / 1000; 
+                const scaleLabel = dist >= 1 ? (Math.round(dist / 10) * 10 || Math.round(dist)) + ' km' : Math.round(dist * 1000) + ' m'; 
+                document.getElementById('scale_' + card.id).innerHTML = `<div class="scale-bar" style="width:50px;"></div><div>${scaleLabel}</div>`; 
+            }, 100); 
+        }
+        
+        function formatNumber(n) { 
+            if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M'; 
+            if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K'; 
+            return n % 1 === 0 ? n.toLocaleString() : n.toFixed(2); 
+        }
+        
+        function clearAll() { 
+            if (!confirm('Clear everything?')) return; 
+            Object.values(charts).forEach(c => c.destroy()); 
+            Object.values(maps).forEach(m => m.remove()); 
+            charts = {}; maps = {}; sections = []; 
+            uploadedData = []; filteredData = []; columns = []; 
+            sectionCounter = 0; cardCounter = 0; 
+            activeSectionId = null;
+            activeFilters = {};
+            loadedDataUrl = '';
+            document.getElementById('sectionsContainer').innerHTML = `<div class="add-section-btn" onclick="addSection()"><svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span>Add Dashboard Section</span><p style="font-size:12px;margin-top:5px;font-weight:400;">Load data first, then add sections</p></div>`; 
+            document.getElementById('fileInfo').classList.remove('show'); 
+            document.getElementById('dataPreview').classList.remove('show'); 
+            document.getElementById('filterPanel').style.display = 'none'; 
+            document.getElementById('layoutPanel').style.display = 'none';
+            document.getElementById('fileInput').value = ''; 
+            document.getElementById('dataUrl').value = ''; 
+            document.getElementById('sectionTabsVertical').innerHTML = '';
+            document.getElementById('sectionTabsHorizontal').innerHTML = '';
+            setLayout('none');
+            showToast('Cleared'); 
+        }
+        
+        function exportConfig() { 
+            const filterCols = Array.from(document.getElementById('filterVarSelect').selectedOptions).map(o => o.value);
+            const config = { 
+                layoutMode: layoutMode,
+                filterColumns: filterCols,
+                sections: sections.map(s => ({ 
+                    title: s.title, rows: s.rows, cols: s.cols, 
+                    cards: s.cards.map(c => ({ 
+                        title: c.title, chartType: c.chartType, labelColumn: c.labelColumn, 
+                        valueColumn: c.valueColumn, chartPalette: c.chartPalette, aggType: c.aggType,
+                        bins: c.bins, xColumn: c.xColumn, yColumn: c.yColumn, sizeColumn: c.sizeColumn,
+                        groupColumn: c.groupColumn, tableColumns: c.tableColumns
+                    })) 
+                })) 
+            }; 
+            const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' }); 
+            const a = document.createElement('a'); 
+            a.href = URL.createObjectURL(blob); 
+            a.download = 'dashboard-config.json'; 
+            a.click(); 
+            showToast('Exported'); 
+        }
+        
+        function importConfig() {
+            document.getElementById('importInput').click();
+        }
+        
+        function handleImport(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    const config = JSON.parse(e.target.result);
+                    if (!uploadedData.length) {
+                        window.pendingConfig = config;
+                        showToast('Config loaded. Now load your data.');
+                    } else {
+                        applyConfigFromUrl(config);
+                    }
+                } catch (err) {
+                    showToast('Invalid config file', 'error');
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        }
+        
+        function showToast(msg, type = 'success') { 
+            const t = document.getElementById('toast'); 
+            t.textContent = msg; 
+            t.className = 'toast show' + (type === 'error' ? ' error' : ''); 
+            setTimeout(() => t.classList.remove('show'), 3000); 
+        }
         
         document.getElementById('widgetModal').addEventListener('click', e => { if (e.target.id === 'widgetModal') closeWidgetModal(); });
         document.getElementById('sectionModal').addEventListener('click', e => { if (e.target.id === 'sectionModal') closeSectionModal(); });
         document.getElementById('shareModal').addEventListener('click', e => { if (e.target.id === 'shareModal') closeShareModal(); });
         document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeWidgetModal(); closeSectionModal(); closeShareModal(); } });
-        document.addEventListener('change', e => { if (['dataJoinCol', 'geoJoinCol', 'mapValueCol'].includes(e.target.id)) validateApply(); });
+        document.addEventListener('change', e => { if (['dataJoinCol', 'geoJoinCol', 'mapValueCol', 'xCol', 'yCol', 'sizeCol'].includes(e.target.id)) validateApply(); });
     </script>
 </body>
 </html>
