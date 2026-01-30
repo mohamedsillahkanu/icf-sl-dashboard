@@ -1009,12 +1009,15 @@
             sectionCounter++; 
             const section = { id: 'section_' + sectionCounter, title, rows, cols, cards: [] }; 
             sections.push(section); 
-            if (!activeSectionId) activeSectionId = section.id;
+            
+            // Always switch to the new section
+            activeSectionId = section.id;
+            
             renderSection(section); 
             renderSectionTabs();
             updateSectionVisibility();
             closeSectionModal(); 
-            showToast(`Created ${rows}×${cols} section`); 
+            showToast(`Created "${title}" section`); 
         }
         
         function renderSection(section) { 
@@ -1022,7 +1025,8 @@
             const addBtn = container.querySelector('.add-section-btn'); 
             
             const wrapper = document.createElement('div');
-            wrapper.className = 'section-content' + (layoutMode === 'none' || section.id === activeSectionId ? ' active' : '');
+            // New section should always be active since we set activeSectionId before calling this
+            wrapper.className = 'section-content active';
             wrapper.id = 'content_' + section.id;
             
             const div = document.createElement('div'); 
